@@ -44,7 +44,7 @@
 
     <div>el salvador: {{elsalvador}}</div>
     <div id="tooltip" display="none" style="position: absolute; display: none;">
-      {{muniTooltip.nombre}}: {{muniTooltip.num}}
+      {{muniTooltip.nombre}}: {{muniTooltip.numCasos}}
     </div>
   </div>
 </template>
@@ -52,10 +52,9 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import { Tooltip } from "../tools/tooltip";
-import config from "../tools/config";
-import { cleanUpSpecialChars, obtenerJson } from "../tools/tools";
-import {colorearMunicipio, colors} from "../tools/map_tools"
-import {Departamento,Municipio,Casos} from '../model/geo';
+import { obtenerJson } from "../tools/tools";
+import { colorearMunicipio } from "../tools/map_tools"
+import { Departamento, Municipio, Casos } from '../model/geo';
 
 
 
@@ -69,7 +68,7 @@ export default class Mapa extends Vue {
   elsalvador = "";
   departamentos: Departamento[] = [];
   casos: Casos[] = [];
-  muniTooltip: any = {nombre:'',num:0};
+  muniTooltip: any = {nombre:'',numCasos:0};
 
   resaltarMunicipio(muni: any, resaltar = true) {
     if (resaltar) {
@@ -93,7 +92,8 @@ export default class Mapa extends Vue {
 
     for (const x in this.departamentos) {
       for (const muni of this.departamentos[x].municipios) {
-        let num = this.casos.find(x => x.municipio.id == muni.id)?.casos;
+        let num = this.casos.find(x => x.municipio.id == muni.id)?.casos || 0;
+        muni.numCasos = num;
 
         num = ((num ? num : 0) * 100) / this.maxVal;
 
@@ -101,7 +101,7 @@ export default class Mapa extends Vue {
           this.tablaMunicipios.push({
             departamento: x,
             municipio: muni,
-            casos: num
+            casos: muni.numCasos
           });
 
         if (num > 0)
@@ -112,10 +112,13 @@ export default class Mapa extends Vue {
     this.tablaMunicipios.sort((a: any, b: any) => b.casos - a.casos);
   }
 
-  configurarEventosMunicipio(muni:Municipio){
+  configurarEventosMunicipio(muni: Municipio){
     for (let i = 0; i < muni.elements.length; i++){
       const e = muni.elements[i];
-      e.onmouseover = () => this.resaltarMunicipio(muni);
+      e.onmouseover = () => {
+        this.resaltarMunicipio(muni);
+        this.muniTooltip = muni;
+      }
       e.onmousemove = function(evt: MouseEvent) {
         Tooltip.showTooltip(
           evt
@@ -133,7 +136,7 @@ export default class Mapa extends Vue {
     const self = this;
     (async () => {
       try {
-        this.casos = await obtenerJson("/casos_covid/2020-05-05T00:00:00.000");
+        this.casos = await obtenerJson("/casos_covid");
         console.log("casos:", this.casos);
       } catch (e) {
         console.error(e);

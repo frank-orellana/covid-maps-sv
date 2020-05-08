@@ -10,6 +10,7 @@ export interface Municipio {
   nombre: string;
   poblacion: number;
   elements: HTMLCollectionOf<SVGPathElement>;
+  numCasos: number;
 }
 
 export interface Departamento {

@@ -1,8 +1,8 @@
 import config from "./config";
 
-export async function obtenerJson(url: string, params = {}): Promise<any>{
+export async function obtenerJson(url: string, params = {method: "post"}): Promise<any>{
 	console.log("fetching", config.api_url + url);
-	const resp = await fetch(config.api_url + url, {method: "post"});
+	const resp = await fetch(config.api_url + url, params);
 	if(resp.status == 200){
 		const json = await resp.json();
 		console.log('response:', json);
