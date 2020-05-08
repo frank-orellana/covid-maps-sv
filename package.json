@@ -32,7 +32,9 @@
   "eslintConfig": {
     "root": true,
     "env": {
-      "node": true
+      "node": true,
+      "browser": true,
+      "es6": true
     },
     "extends": [
       "plugin:vue/essential",
@@ -42,8 +44,13 @@
     "parserOptions": {
       "ecmaVersion": 2020
     },
+    "ignorePatterns": ["src/shims-tsx.d.ts", "src/tools/config.ts", "node_modules/"],
     "rules": {
-      "camelcase": "off"
+      "camelcase": "warn",
+      "no-unused-vars": "warn",
+      "ignoreDestructuring": "off",
+      "@typescript-eslint/camelcase": "warn",
+      "@typescript-eslint/no-explicit-any": "off"
     }
   },
   "browserslist": [
