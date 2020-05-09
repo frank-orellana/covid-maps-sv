@@ -1,6 +1,6 @@
 import config from "./config";
 
-export async function obtenerJson(url: string, params: RequestInit = {method: "post"}): Promise<any>{
+export async function obtenerJson(url: string, params: RequestInit = {method: "post",mode:"cors"}): Promise<any>{
 	//console.log("fetching", config.api_url + url, params);
 	const resp = await fetch(config.api_url + url, params);
 	if(resp.status == 200){
