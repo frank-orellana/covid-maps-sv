@@ -64,8 +64,6 @@ import { obtenerJson } from "../tools/tools";
 import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO } from "../tools/map_tools"
 import { Departamento, Municipio, Casos } from '../model/geo';
 
-
-
 @Component
 export default class Mapa extends Vue {
   @Prop() private msg!: string;
@@ -78,11 +76,17 @@ export default class Mapa extends Vue {
           }[] = [];
   elsalvador = "";
   departamentos: Departamento[] = [];
+  municipios: Map<number,Municipio> = new Map();
   // Fechas
   fechasCasos: string[] = [];
   fechaSelIdx = 0;
   mantenerMax = true;
   documentoListo = false;
+  listaCasosFecha: Map<string,Casos[]> = new Map();
+
+  //Casos
+  casos: Casos[] = [];
+  muniTooltip: any = {nombre:'',numCasos:0};
 
   get fechaSelFormateada(): string {
     const fecStr = this.fechasCasos[this.fechaSelIdx];
@@ -95,13 +99,20 @@ export default class Mapa extends Vue {
   async fechaSelIdxChanged(){
     const fecString = this.fechasCasos[this.fechaSelIdx];
 
-    this.casos = await obtenerJson("/casos_covid/"+ fecString,{method:'get'});
+    this.casos = await this.obtenerCasos(fecString);
     this.mostrar();
   }
 
-  //Casos
-  casos: Casos[] = [];
-  muniTooltip: any = {nombre:'',numCasos:0};
+  async obtenerCasos(fecString: string): Promise<Casos[]>{
+    const casos = this.listaCasosFecha.get(fecString);
+
+    if(casos != undefined) return casos;
+    
+    const casos2 = (await obtenerJson("/casos_covid/"+ fecString,{method:'get'})) || [];
+    this.listaCasosFecha.set(fecString,casos2);
+    return casos2;
+  }
+
 
   resaltarMunicipio(muni: any, resaltar = true) {
     if (resaltar) {
@@ -120,24 +131,31 @@ export default class Mapa extends Vue {
     if(this.maxVal == 0 || !this.mantenerMax)
       this.maxVal = r.max;
 
-    for (const x of this.departamentos) {
-      for (const muni of x.municipios) {
-        let num = this.casos.find(x => x.municipio.id == muni.id)?.casos || 0;
-        muni.numCasos = num;
+    this.municipios.forEach(muni => {
+      colorearMunicipio(muni, COLOR_DEFAULT);
+    });
 
-        num = ((num ? num : 0) * 100) / this.maxVal;
+    for(const c of this.casos){
+      const muni = this.municipios.get(c.municipio.id);
+      if(muni != undefined){
+        muni.numCasos = c.casos;
+        
+        if (c.casos > 0){
+          const proporciponal = c.casos * 100 / this.maxVal;
 
-        if (num > 0){
-          this.tablaMunicipios.push({
-            departamento: x.nombre,
-            municipio: muni,
-            casos: muni.numCasos
-          });
-          colorearMunicipio(muni,"hsl(0, 100%, " + (100 - num - (100 - num) * 0.05) + "%)");
-        }else
-          colorearMunicipio(muni, COLOR_DEFAULT);
+            this.tablaMunicipios.push({
+              departamento: muni.departamento.nombre,
+              municipio: muni,
+              casos: c.casos
+            });
+            colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporciponal - (100 - proporciponal) * 0.05) + "%)");
+        }
+      }else{
+        console.error('municipio',c.municipio.id, 'no encontrado');
       }
     }
+
+    
 
     this.tablaMunicipios.sort((a: any, b: any) => b.casos - a.casos);
     this.tablaMunicipios = this.tablaMunicipios.slice(0,10);
@@ -200,11 +218,15 @@ export default class Mapa extends Vue {
 
         if(this.departamentos.length == 0) {
           this.departamentos = await obtenerJson("/departamentos/codigo_pais/503/si",{method:'get',cache:'force-cache'});
+          for(let d of this.departamentos)
+            for(let m of d.municipios){
+              m.departamento = d;
+              this.municipios.set(m.id,m);
+            }
           this.init();
         }
         
         this.fechaSelIdx = this.maxIdxFechas;
-        //console.log("casos:", this.casos, 'fechasCasos',this.fechasCasos,"departamentos", this.departamentos);
       } catch (e) {
         console.error(e);
       }
