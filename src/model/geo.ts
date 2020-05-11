@@ -12,6 +12,7 @@ export interface Municipio {
   poblacion: number;
   elements: HTMLCollectionOf<SVGPathElement>;
   numCasos: number;
+  numCasosX100000: number;
   departamento: Departamento;
 }
 

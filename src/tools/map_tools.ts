@@ -1,6 +1,6 @@
 import {Municipio} from '../model/geo'
 
-export const COLOR_DEFAULT = "lightgreen"
+export const COLOR_DEFAULT = "#77dd77"
 export const COLOR_RESALTADO = "gray"
 
 export function colorearMunicipio(muni: Municipio, color: string) {

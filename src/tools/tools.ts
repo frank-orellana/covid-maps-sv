@@ -23,3 +23,7 @@ export function cleanUpSpecialChars(str: string) {
 		.replace(/[ñ]/gi, "n")
 		.replace(/[^a-z0-9 ]/gi, ""); // final clean up
 }
+
+export function sleep(ms:number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
