@@ -5,7 +5,18 @@
     <p style="font-size:small; font-weight: bold; text-align: left;position:absolute;top:75mm;">
       Fecha: {{fechaSelFormateada}}
     </p>
-    <a @click="reproducir" :disabled="playing" style="position:absolute;top:85mm;" href="javascript:;" class="round-button">&#9658;</a>
+    <p style="position:absolute;top:85mm;">
+      <a @click="reproducir" :disabled="playing" href="javascript:;" class="round-button">&#9658;</a>&nbsp;<span style="font-size:small; font-weight: bold;">{{estadoRep}}</span>
+    </p>
+
+    <img @click="svg.zoomOut()" src="img/zoomout.svg" class="zoom-control" style="position:absolute;top:5mm;left: 5mm;" />
+    <img @click="svg.resetZoom();svg.resetPan();"  src="img/zoomreset.svg" class="zoom-control" style="position:absolute;top:15mm;left: 5mm;" />
+    <img @click="svg.zoomIn()" src="img/zoomin.svg" class="zoom-control" style="position:absolute;top:25mm;left: 5mm;" />
+
+    <select v-model="zoomedInMuni" @change="zoomInMuni">
+      <option />
+      <option v-for="m of Array.from(municipios.values()).sort((a,b) => a.nombre < b.nombre ? -1:0)" v-bind:key="m.id" :value="m">{{m.nombre}}, {{m.departamento.nombre}}</option>
+    </select>
     <div class="copy">
         Creador: Franklin Orellana, Tritium S.p.A. © 2020 - Fuente de datos: https://covid19.gob.sv/ ( DE MAYO 2020 9:13 p.m.)
     </div>
@@ -77,9 +88,10 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { Tooltip } from "../tools/tooltip";
-import { obtenerJson, sleep } from "../tools/tools";
+import { obtenerJson, sleep, eventsHandler } from "../tools/tools";
 import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO } from "../tools/map_tools"
 import { Departamento, Municipio, Casos } from '../model/geo';
+import svgPanZoom from 'svg-pan-zoom';
 
 @Component
 export default class Mapa extends Vue {
@@ -101,12 +113,68 @@ export default class Mapa extends Vue {
   documentoListo = false;
   listaCasosFecha: Map<string,Casos[]> = new Map();
   playing = false;
+  estadoRep = "";
 
   //Casos
   casos: Casos[] = [];
   muniTooltip: any = {nombre:'',numCasos:0, numCasosX100000: 0};
   casosImportados = [37,40,50,56,63,72,84,93,107,108,113,117,117,117];
 
+  svg: SvgPanZoom.Instance | undefined = undefined;
+
+  
+  zoomedInMuni:Municipio = {} as Municipio;
+
+  @Watch('zoomedInMuni')
+  async bordes (){
+
+    let e = this.zoomedInMuni.elements;
+    if(e != undefined){
+      //incrementeamos el borde y el color
+      for(let x = 1; x <= 10; x++){
+        for(let i = 0; i < e.length; i++){
+          e[i].style.strokeWidth = (0.132292 + (x * 0.09)).toString();
+          const col = 192 - (x * 10);
+          e[i].style.stroke = `rgb(${col}, ${col}, ${col})`;
+        }
+        await sleep(120);
+      }
+
+      //decrementeamos el borde y el color
+      for(let x = 1; x <= 10; x++){
+        for(let i = 0; i < e.length; i++){
+          e[i].style.strokeWidth = (1.032292 - (x * 0.09)).toString();
+          const col = 92 + (x * 10);
+          e[i].style.stroke = `rgb(${col}, ${col}, ${col})`;;
+          await sleep(45);
+        }
+      }
+
+      for(let i = 0; i < e.length; i++){
+          e[i].style.strokeWidth = '0.132292';
+          e[i].style.stroke = 'rgb(192, 192, 192)';
+        }
+    }
+      
+  }
+
+  async zoomInMuni(){
+    console.log(this.zoomedInMuni);
+    if(this.svg !== undefined){
+      this.svg.resetZoom();
+      this.svg.resetPan();
+
+      await sleep(400);
+
+      let point: SvgPanZoom.Point = {x:0,y:0};
+      const c = this.zoomedInMuni.elements[0].getBoundingClientRect();
+
+      point.x = c.x + (c.width / 2);
+      point.y = c.y + (c.height / 2);
+
+      this.svg.zoomAtPoint(4,point);
+    }
+  }
   get fechaSelFormateada(): string {
     const fecStr = this.fechasCasos[this.fechaSelIdx];
     if (fecStr == undefined) return "N/A";
@@ -135,6 +203,14 @@ export default class Mapa extends Vue {
   }
 
   async reproducir(){
+    this.estadoRep = "Cargando...";
+
+    const promesas: Array<Promise<Casos[]>> = []
+    this.fechasCasos.forEach(fecString => promesas.push(this.obtenerCasos(fecString)));
+    await (Promise.all(promesas.slice(0,10))); //espero a que hayan cargado al menos los primeros 10 para reproducir
+
+    this.estadoRep = "";
+
     if(this.playing) return;
     this.playing = true;
     for(let i = 0; i <= this.maxIdxFechas; i++){
@@ -208,19 +284,19 @@ export default class Mapa extends Vue {
   configurarEventosMunicipio(muni: Municipio){
     for (let i = 0; i < muni.elements.length; i++){
       const e = muni.elements[i];
-      e.onmouseover = () => {
+      e.addEventListener('mouseover', () => {
         this.resaltarMunicipio(muni);
         this.muniTooltip = muni;
-      }
-      e.onmousemove = function(evt: MouseEvent) {
+      }, {passive: true});
+      e.addEventListener('mousemove',(evt: MouseEvent) => {
         Tooltip.showTooltip(
           evt
         );
-      };
-      e.onmouseout = () => {
+      }, {passive: true});
+      e.addEventListener('mouseout', () => {
         Tooltip.hideTooltip();
         this.resaltarMunicipio(muni, false);
-      };
+      }, {passive: true});
     }
   }
 
@@ -252,6 +328,11 @@ export default class Mapa extends Vue {
       }
     }
     this.mostrar();
+    this.svg = svgPanZoom('#mapa',{
+      customEventsHandler: eventsHandler,
+      minZoom: 0.8
+    });
+    //this.svg.setOnZoom():
   }
 
   mounted() {
@@ -276,7 +357,12 @@ export default class Mapa extends Vue {
       }
     })();
 
-    window.addEventListener("load", () => this.documentoListo = true);
+    
+
+    window.addEventListener("load", () => {
+      this.documentoListo = true;
+      
+    });
   }
 }
 </script>
@@ -284,12 +370,21 @@ export default class Mapa extends Vue {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 
+.zoom-control {
+  height: 20px;
+  width: 20px;
+}
+
+.zoom-control:hover {
+  filter: drop-shadow( 5px 5px 5px #000 );
+}
+
 #tooltip {
   background: cornsilk;
   border: 1px solid black;
   border-radius: 5px;
   padding: 5px;
-  font-size: 8px;
+  font-size: 9px;
 }
 
 .colorbar {
