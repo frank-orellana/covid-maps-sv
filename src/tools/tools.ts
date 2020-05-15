@@ -29,6 +29,45 @@ export function sleep(ms:number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+
+export class Player {
+  playing = false;
+  estadoRep = "";
+  idx = 0;
+  max = 0;
+  timeout: number = -1;
+  delay = 30;
+  callback: Function;
+  constructor(callback: Function,delay = 30){
+    this.delay = delay;
+    this.callback = callback;
+  }
+  play(){
+    this.playing = true;
+
+    if(this.idx <= this.max)
+      try{this.callback();}catch(e){console.log(e);};
+    
+    if(this.idx < this.max){
+			this.idx++;
+			const _self = this;
+      this.timeout = setTimeout(() => this.play(),this.delay,[this.callback]);
+    }else
+      this.stop();
+  }
+  stop(){
+    this.playing = false;
+    this.idx = 0;
+    clearTimeout(this.timeout);
+  }
+  pause(){
+    clearTimeout(this.timeout);
+  }
+  resume(){
+    this.play();
+  }
+}
+
 let hammer: HammerManager;
 
 export const eventsHandler = {
