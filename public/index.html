@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="/favicon.ico">
     <title><%= htmlWebpackPlugin.options.title %></title>
+	
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-166801911-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());gtag('config', 'UA-166801911-1');
+    </script>
   </head>
   <body>
     <noscript>
@@ -13,5 +20,24 @@
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->
+
+    <!-- Default Statcounter code for Tritium.cl
+	http://tritium.cl -->
+	<script type="text/javascript">
+    var sc_project=11139562; 
+    var sc_invisible=0; 
+    var sc_security="736cf650"; 
+    var scJsHost = "https://";
+    document.write("<sc"+"ript type='text/javascript' src='" +
+    scJsHost+
+    "statcounter.com/counter/counter.js'></"+"script>");
+    </script>
+    <noscript><div class="statcounter"><a title="Web Analytics
+    Made Easy - StatCounter" href="https://statcounter.com/"
+    target="_blank"><img class="statcounter"
+    src="https://c.statcounter.com/11139562/0/736cf650/0/"
+    alt="Web Analytics Made Easy -
+    StatCounter"></a></div></noscript>
+    <!-- End of Statcounter Code -->
   </body>
 </html>
