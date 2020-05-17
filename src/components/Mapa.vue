@@ -5,55 +5,60 @@
     <p style="font-size:small; font-weight: bold; text-align: left;position:absolute;top:3mm;left: 15mm;">
       BETA
     </p>
-    <p style="font-size:small; font-weight: bold; text-align: left;position:absolute;top:75mm;">
+    <p style="text-align: left;position:absolute;top:75mm;" class="label">
       Fecha: {{fechaSelFormateada}}
     </p>
-    <p style="position:absolute;top:80mm;" v-if="!player.playing">
-      <img @click="reproducir" src="img/play.png" class="player_button" />&nbsp;
-      <span style="font-size:small; font-weight: bold;">{{player.estadoRep}}</span>
-    </p>
-    <p style="position:absolute;top:80mm;" v-if="player.playing">
-      <img  @click="player.resume()" src="img/play.png" class="player_button" />&nbsp;
-      <img  @click="player.pause()"  src="img/pause.png" class="player_button" />&nbsp;
-      <img  @click="player.stop()" src="img/stop.png" class="player_button" />&nbsp;
-      <span style="font-size:small; font-weight: bold;">{{player.estadoRep}}</span>
+    <p id="playerControls" style="position:absolute;top:80mm;">
+      <img @click="reproducir"  v-if="!player.playing" src="img/play.png" class="player_button" />&nbsp;
+      <img  @click="player.play()" v-if="player.paused && player.playing" src="img/play.png" class="player_button" />&nbsp;
+      <img  @click="player.pause()" v-if="!player.paused && player.playing" src="img/pause.png" class="player_button" />&nbsp;
+      <img  @click="player.stop()"  v-if="player.playing" src="img/stop.png" class="player_button" />&nbsp;
+      <span class="label">{{player.estadoRep}}</span>
     </p>
 
-    <img @click="svg.zoomOut()" src="img/zoomout.svg" class="zoom-control" style="position:absolute;top:5mm;left: 5mm;" />
+    <div id="escala" class="label-small" style="position:absolute; top:5mm; text-align: right; left: 0; right: 0; margin-left:auto; margin-right:5mm;">
+      <label><input type="checkbox" style="height:10px" v-model="escalaLogaritmica" />Escala logarítmica</label>
+    </div>
+
+    <img name="zoomOut" @click="svg.zoomOut()" src="img/zoomout.svg" class="zoom-control" style="position:absolute;top:5mm;left: 5mm;" />
     <img @click="svg.resetZoom();svg.resetPan();"  src="img/zoomreset.svg" class="zoom-control" style="position:absolute;top:15mm;left: 5mm;" />
     <img @click="svg.zoomIn()" src="img/zoomin.svg" class="zoom-control" style="position:absolute;top:25mm;left: 5mm;" />
+
+    
 
     <select v-model="zoomedInMuni" @change="zoomInMuni">
       <option />
       <option v-for="m of Array.from(municipios.values()).sort((a,b) => a.nombre < b.nombre ? -1:0)" v-bind:key="m.id" :value="m">{{m.nombre}}, {{m.departamento.nombre}}</option>
     </select>
     <div class="copy">
-        Creador: Franklin Orellana, Tritium S.p.A. © 2020 - Fuente de datos: https://covid19.gob.sv/ ( DE MAYO 2020 9:13 p.m.)
+        Creador: Franklin Orellana, Tritium S.p.A. © 2020 - Fuente de datos: <a class="link" href="https://covid19.gob.sv/">covid19.gob.sv</a>
     </div>
 
-    <table style="font-size:small; font-weight: bold;">
+    <table id="slider" style="font-size:small; font-weight: bold;">
       <tr>
-        <td>{{formatFechaJSON(fechasCasos[0])}}</td>
+        <td class="label-small">{{formatFechaJSON(fechasCasos[0])}}</td>
         <td style="width:90%">
           <input type="range" min="0" :max="maxIdxFechas" value="0" style="width:100%" :title="fechaSelFormateada" id="myRange" v-model="fechaSelIdx"> 
         </td>
-        <td>{{formatFechaJSON(fechasCasos[maxIdxFechas])}}</td>
+        <td class="label-small">{{formatFechaJSON(fechasCasos[maxIdxFechas])}}</td>
       </tr>
     </table>
     
     <table id="colorbar" width="100%">
       <tr>
         <td style="background:#77dd77; width:4%">&nbsp;</td>
-        <td colspan="3" class="colorbar"></td>
+        <td colspan="5" class="colorbar"></td>
       </tr>
-      <tr>
+      <tr class="label">
         <td style="text-align:center; width:4%">0</td>
-        <td style="text-align:left; width:30%">1</td>
-        <td style="text-align:center; width:30%">{{Math.floor(maxVal / 2)}}</td>
-        <td style="text-align:right; width:36%">{{maxVal}}</td>
+        <td style="text-align:left; width:4%">1</td>
+        <td style="text-align:center; width:34%">{{Math.round(puntoEscala(0.25))}}</td>
+        <td style="text-align:center; width:16%">{{Math.round(puntoEscala(0.50))}}</td>
+        <td style="text-align:center; width:34%">{{Math.round(puntoEscala(0.75))}}</td>
+        <td style="text-align:right; width:8%">{{maxVal}}</td>
       </tr>
       <tr>
-        <td colspan="4" style="text-size:smedium;text-align:center;">
+        <td colspan="6" style="text-size:smedium;text-align:center;">
           Total de casos LOCALES en todo el país:
           <b>{{total}}</b>
           más {{numCasosImportados}} importados: {{total + numCasosImportados}}
@@ -126,6 +131,20 @@ export default class Mapa extends Vue {
 
   player = new Player(this.cambiarFecha, 330);
 
+  escalaLogaritmica = false;
+  puntosEscala = {
+    punto25: 0,
+    punto50: 0,
+    punto75: 0
+  }
+
+  puntoEscala(pos:number){
+    if(this.escalaLogaritmica)
+      return Math.pow(10,(this.maxVal * pos) * Math.log10(this.maxVal) / this.maxVal);
+    else
+      return this.maxVal * pos;
+  }
+
   cambiarFecha() {
     this.fechaSelIdx = this.player.idx;
   }
@@ -171,6 +190,11 @@ export default class Mapa extends Vue {
         }
     }
       
+  }
+
+  @Watch('escalaLogaritmica')
+  toggleEscala(){
+    this.mostrar();
   }
 
   async zoomInMuni(){
@@ -271,14 +295,20 @@ export default class Mapa extends Vue {
         muni.numCasosX100000 = Math.round((c.casos * 100000 / muni.poblacion) * 10) / 10;
         
         if (c.casos > 0){
-          const proporciponal = c.casos * 100 / this.maxVal;
-
-            this.tablaMunicipios.push({
-              departamento: muni.departamento.nombre,
-              municipio: muni,
-              casos: c.casos
-            });
-            colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporciponal - (100 - proporciponal) * 0.05) + "%)");
+          let proporcional: number;
+          if(this.escalaLogaritmica){
+            proporcional = ((this.maxVal / Math.log10(this.maxVal)) * Math.log10(c.casos)) * 100 / this.maxVal;
+          }else{
+            proporcional = c.casos * 100 / this.maxVal;
+          }
+          
+          this.tablaMunicipios.push({
+            departamento: muni.departamento.nombre,
+            municipio: muni,
+            casos: c.casos
+          });
+          colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional - (100 - proporcional) * 0.05) + "%)");
+          //colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional) + "%)");
         }
       }else{
         console.error('municipio',c.municipio.id, 'no encontrado');
@@ -468,6 +498,23 @@ body {
   cursor: pointer;
 	transition: all 0.3s ease;
 }
-
-
+.label {
+  font-size: small;
+  font-weight: bold;
+}
+.label-small {
+  font-size: xx-small;
+  font-weight: bold;
+  vertical-align: middle;
+  pointer-events: visiblePainted;
+}
+.copy a, .copy a:visited {
+  width: 100%;
+  text-align: right;
+  color: darkslategrey;
+  font-size: 7px;
+}
+h3 {
+  margin-top: 20px;
+}
 </style>

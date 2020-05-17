@@ -31,7 +31,8 @@ export function sleep(ms:number) {
 
 
 export class Player {
-  playing = false;
+	playing = false;
+	paused = false;
   estadoRep = "";
   idx = 0;
   max = 0;
@@ -43,7 +44,8 @@ export class Player {
     this.callback = callback;
   }
   play(){
-    this.playing = true;
+		this.playing = true;
+		this.paused = false;
 
     if(this.idx <= this.max)
       try{this.callback();}catch(e){console.log(e);};
@@ -56,15 +58,13 @@ export class Player {
       this.stop();
   }
   stop(){
-    this.playing = false;
+		this.playing = false;
     this.idx = 0;
     clearTimeout(this.timeout);
   }
   pause(){
-    clearTimeout(this.timeout);
-  }
-  resume(){
-    this.play();
+		clearTimeout(this.timeout);
+		this.paused = true;
   }
 }
 
