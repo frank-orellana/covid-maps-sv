@@ -34,7 +34,7 @@
         Creador: Franklin Orellana, Tritium S.p.A. © 2020 - Fuente de datos: <a class="link" href="https://covid19.gob.sv/">covid19.gob.sv</a>
     </div>
 
-    <table id="slider" style="font-size:small; font-weight: bold;">
+    <table id="slider" style="font-size:small; font-weight: bold; width:100%">
       <tr>
         <td class="label-small">{{formatFechaJSON(fechasCasos[0])}}</td>
         <td style="width:90%">
@@ -61,7 +61,8 @@
         <td colspan="6" style="text-size:smedium;text-align:center;">
           Total de casos LOCALES en todo el país:
           <b>{{total}}</b>
-          más {{numCasosImportados}} importados: {{total + numCasosImportados}}
+          más {{numCasosImportados}} importados: {{total + numCasosImportados}}<br/>
+          {{municipiosConCasos()}} municipios de 262 ({{ Math.round(100 * municipiosConCasos() / 262)}}%) con al menos 1 caso
         </td>
       </tr>
     </table>
@@ -129,7 +130,7 @@ export default class Mapa extends Vue {
   documentoListo = false;
   listaCasosFecha: Map<string,Casos[]> = new Map();
 
-  player = new Player(this.cambiarFecha, 330);
+  player = new Player(this.cambiarFecha, 300);
 
   escalaLogaritmica = false;
   puntosEscala = {
@@ -153,6 +154,9 @@ export default class Mapa extends Vue {
   casos: Casos[] = [];
   muniTooltip: any = {nombre:'',numCasos:0, numCasosX100000: 0};
   casosImportados = [37,40,50,56,63,72,84,93,107,108,113,117,117,117];
+  municipiosConCasos(){
+    return Array.from(this.municipios).reduce((p,[i,c]) => (c.numCasos > 0)?p + 1:p ,0)
+  }
 
   svg: SvgPanZoom.Instance | undefined = undefined;
 
