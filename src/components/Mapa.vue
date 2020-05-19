@@ -108,6 +108,7 @@ import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO } from "../tools/map_
 import { Departamento, Municipio, Casos } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
 
+enum tipo_med{casos,casos_poblacion,casos_poblacion_km2}
 
 @Component
 export default class Mapa extends Vue {
@@ -132,11 +133,8 @@ export default class Mapa extends Vue {
   player = new Player(this.cambiarFecha, 330);
 
   escalaLogaritmica = false;
-  puntosEscala = {
-    punto25: 0,
-    punto50: 0,
-    punto75: 0
-  }
+  
+  tipoMedicion:tipo_med = tipo_med.casos;
 
   puntoEscala(pos:number){
     if(this.escalaLogaritmica)
@@ -277,7 +275,14 @@ export default class Mapa extends Vue {
   mostrar() {
     this.tablaMunicipios = [];
 
-    const r = this.casos.reduce((p,c) => {return {tot:p.tot + c.casos, max:Math.max(p.max,c.casos)}}, {tot:0,max:0});
+    const r = this.casos.reduce((p,c) => {
+      return {
+        tot:p.tot + c.casos, 
+        max:Math.max(p.max,c.casos),
+        max_casos_pob:Math.max(p.max,c.casos*100000/c.municipio.poblacion),
+        max_casos_pob_km2:Math.max(p.max,c.casos*100000/Math.log(c.municipio.poblacion))
+      }
+    }, {tot:0,max:0,max_casos_pob:0,max_casos_pob_km2:0});
     this.total = r.tot;
     if(this.maxVal == 0 || !this.mantenerMax)
       this.maxVal = r.max;
