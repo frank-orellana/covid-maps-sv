@@ -16,7 +16,7 @@
       <span class="label">{{player.estadoRep}}</span>
     </p>
 
-    <div id="escala" class="label-small" style="position:absolute; top:5mm; text-align: right; left: 0; right: 0; margin-left:auto; margin-right:5mm;">
+    <div id="escala" class="label-small" style="position:absolute; top:5mm; text-align: right; right: 0; margin-left:auto; margin-right:5mm;">
       <label><input type="checkbox" style="height:10px" v-model="escalaLogaritmica" />Escala logarítmica</label>
     </div>
 
