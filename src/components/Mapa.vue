@@ -16,8 +16,23 @@
       <span class="label">{{player.estadoRep}}</span>
     </p>
 
-    <div id="escala" class="label-small" style="position:absolute; top:5mm; text-align: right; right: 0; margin-left:auto; margin-right:5mm;">
-      <label><input type="checkbox" style="height:10px" v-model="escalaLogaritmica" />Escala logarítmica</label>
+    <div id="settings" style="position:absolute; top:5mm; text-align: right; right: 10px; margin-left:auto; margin-right:5mm;">
+      <a href="javascript:return false;">
+        <img src="img/settings.png" @click="showSettings = !showSettings" />
+      </a>
+    </div>
+
+    <div id="settingsDialog" style="position:absolute; top:5mm; text-align: middle; margin-left:auto; left:0; right:65px; width:175px; background: white; padding: 10px;" v-if="showSettings">
+      <div id="escala" class="label-small" >
+        <label>Escala:
+        <select v-model="tipoEscala" class="label-small">
+          <option value="0">lineal</option>
+          <option value="1">logaritmica</option>
+          <option value="2">trigonométrica</option>
+          <option value="3">raiz</option>
+        </select>
+        </label>
+      </div>
     </div>
 
     <img name="zoomOut" @click="svg.zoomOut()" src="img/zoomout.svg" class="zoom-control" style="position:absolute;top:5mm;left: 5mm;" />
@@ -109,7 +124,13 @@ import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO } from "../tools/map_
 import { Departamento, Municipio, Casos } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
 
-enum tipo_med{casos,casos_poblacion,casos_poblacion_km2}
+enum tipo_med{casos,casos_poblacion,casos_poblacion_km2};
+class tipo_esc{
+  static lineal = "0";
+  static logaritmica = "1";
+  static trigonometrica = "2";
+  static raiz_cuadrada = "3"
+};
 
 @Component
 export default class Mapa extends Vue {
@@ -133,14 +154,19 @@ export default class Mapa extends Vue {
 
   player = new Player(this.cambiarFecha, 300);
 
-  escalaLogaritmica = false;
+  tipoEscala:tipo_esc = tipo_esc.trigonometrica;
   
   tipoMedicion:tipo_med = tipo_med.casos;
+  showSettings = false;
 
   puntoEscala(pos:number){
-    if(this.escalaLogaritmica)
+    if(this.tipoEscala == tipo_esc.logaritmica)
       return Math.pow(10,(this.maxVal * pos) * Math.log10(this.maxVal) / this.maxVal);
-    else
+    else if(this.tipoEscala == tipo_esc.trigonometrica){
+      return Math.asin(pos) * this.maxVal / Math.asin(1)
+    }else if (this.tipoEscala == tipo_esc.raiz_cuadrada){
+      return Math.pow(pos * Math.sqrt(this.maxVal),2);
+    }
       return this.maxVal * pos;
   }
 
@@ -194,7 +220,7 @@ export default class Mapa extends Vue {
       
   }
 
-  @Watch('escalaLogaritmica')
+  @Watch('tipoEscala')
   toggleEscala(){
     this.mostrar();
   }
@@ -305,9 +331,13 @@ export default class Mapa extends Vue {
         
         if (c.casos > 0){
           let proporcional: number;
-          if(this.escalaLogaritmica){
+          if(this.tipoEscala == tipo_esc.logaritmica){
             proporcional = ((this.maxVal / Math.log10(this.maxVal)) * Math.log10(c.casos)) * 100 / this.maxVal;
-          }else{
+          }else if(this.tipoEscala == tipo_esc.trigonometrica){
+            proporcional = 100 * Math.sin(Math.asin(1) * c.casos / this.maxVal);
+          }else if(this.tipoEscala == tipo_esc.raiz_cuadrada){
+            proporcional = 100 * Math.sqrt(c.casos) / Math.sqrt(this.maxVal);
+          } else{
             proporcional = c.casos * 100 / this.maxVal;
           }
           
