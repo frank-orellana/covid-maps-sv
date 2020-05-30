@@ -1,7 +1,10 @@
-export interface Casos {
+export interface CasosDiarios  {
   id: number;
+  id_municipio: number;
+  fecha: string;
   casos: number;
-  municipio: MunicipioJson;
+  casos_diarios: number;
+  municipio: Municipio;
 }
 
 export interface Municipio {

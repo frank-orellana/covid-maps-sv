@@ -6,7 +6,9 @@
       BETA
     </p>
     <p style="text-align: left;position:absolute;top:75mm;" class="label">
-      Fecha: {{fechaSelFormateada}}
+      Fecha: <input id="fechaSel" type="date"
+       :value="fechasCasos[fechaSelIdx]" @input="actualizarFecha($event)"
+       :min="fechasCasos[0]" :max="fechasCasos[maxIdxFechas]">
     </p>
     <p id="playerControls" style="position:absolute;top:80mm;">
       <img @click="reproducir"  v-if="!player.playing" src="img/play.png" class="player_button" />&nbsp;
@@ -16,16 +18,16 @@
       <span class="label">{{player.estadoRep}}</span>
     </p>
 
-    <div id="settings" style="position:absolute; top:5mm; text-align: right; right: 10px; margin-left:auto; margin-right:5mm;">
-      <a href="javascript:return false;">
-        <img src="img/settings.png" @click="showSettings = !showSettings" />
+    <div id="settings" style="position:absolute; top:5mm; text-align: right; right: 10px; margin-left:auto; margin-right:0mm;">
+      <a>
+        <img src="img/settings.png" @click="showSettings = !showSettings" style="width:75%"/>
       </a>
     </div>
 
     <div id="settingsDialog" style="position:absolute; top:5mm; text-align: middle; margin-left:auto; left:0; right:65px; width:175px; background: white; padding: 10px;" v-if="showSettings">
       <div id="escala" class="label-small" >
         <label>Escala:
-        <select v-model="tipoEscala" class="label-small">
+        <select v-model="tipoEscala" class="label-small" @input="showSettings = false">
           <option value="0">lineal</option>
           <option value="1">logaritmica</option>
           <option value="2">trigonométrica</option>
@@ -81,34 +83,65 @@
         </td>
       </tr>
     </table>
-    <h3>Municipios con mas casos:</h3>
-
-    <table class="tablaMunicipios">
-      <tr>
-        <th>Departamento</th>
-        <th>Municipio</th>
-        <th style="text-align:middle;">Casos</th>
-        <th style="text-align:middle; font-size:small;">Casos por<br/>100000 hab.</th>
-      </tr>
-      <tr
-        v-for="x in tablaMunicipios"
-        v-bind:key="x.municipio.id"
-        @mouseover="resaltarMunicipio(x.municipio)"
-        @mouseout="resaltarMunicipio(x.municipio,false)"
-      >
-        <td>{{x.departamento}}</td>
-        <td>{{x.municipio.nombre}}</td>
-        <td>{{x.casos}}</td>
-        <td>{{x.municipio.numCasosX100000}}</td>
-      </tr>
-      <tr>
-        <td colspan="2">Total Top 10 municipios:</td>
-        <td style="font-weight:bold;">{{tablaMunicipios.reduce((p,c) => c.casos + p,0)}}</td>
-        <td>&nbsp;</td>
-      </tr>
-    </table>
-
-    <div>Estos municipios representan el: {{Math.round((tablaMunicipios.reduce((p,c) => c.casos + p, 0) /total) * 10000)/100}}% de los casos del país.</div>
+    <div class="grid-tablas">
+      <div>
+        <table id="CasosTotales" class="tablaMunicipios"><tr>
+            <th colspan="4">Municipios con mas casos acumulados al ({{fechaSelFormateada}})</th>
+          </tr>
+          <tr>
+            <th style="width:25%">Departamento</th>
+            <th>Municipio</th>
+            <th style="text-align:middle; width:10%;">Casos</th>
+            <th style="text-align:middle; width:10%;font-size:small;">Casos por<br/>100000 hab.</th>
+          </tr>
+          <tr
+            v-for="x in tablaMunicipios"
+            v-bind:key="x.municipio.id"
+            @mouseover="resaltarMunicipio(x.municipio)"
+            @mouseout="resaltarMunicipio(x.municipio,false)"
+          >
+            <td>{{x.municipio.departamento.nombre}}</td>
+            <td>{{x.municipio.nombre}}</td>
+            <td>{{x.casos}}</td>
+            <td>{{x.municipio.numCasosX100000}}</td>
+          </tr>
+          <tr>
+            <td colspan="2">Total Top {{maxTabMunis}} municipios:</td>
+            <td style="font-weight:bold;">{{tablaMunicipios.reduce((p,c) => c.casos + p,0)}}</td>
+            <td>&nbsp;</td>
+          </tr>
+        </table>
+        <div>Estos municipios representan el: {{Math.round((tablaMunicipios.reduce((p,c) => c.casos + p, 0) /total) * 10000)/100}}% de los casos del país.</div>
+      </div>
+      <div>
+        <table id="CasosDiarios" class="tablaMunicipios">
+          <tr>
+            <th colspan="3">Municipios con casos diarios ({{fechaSelFormateada}}):</th>
+          </tr>
+          <tr>
+            <th style="width:25%">Departamento</th>
+            <th>Municipio</th>
+            <th style="text-align:middle; width:10%">Casos diarios</th>
+          </tr>
+          <tr
+            v-for="x in tablaMunicipiosDia"
+            v-bind:key="x.municipio.id"
+            @mouseover="resaltarMunicipio(x.municipio)"
+            @mouseout="resaltarMunicipio(x.municipio,false)"
+          >
+            <td>{{x.municipio.departamento.nombre}}</td>
+            <td>{{x.municipio.nombre}}</td>
+            <td>{{x.casos_diarios}}</td>
+          </tr>
+          <tr>
+            <td colspan="2">Total casos diarios:</td>
+            <td style="font-weight:bold;">{{tablaMunicipiosDia.reduce((p,c) => c.casos_diarios + p,0)}}</td>
+            <td>&nbsp;</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    
     <div id="tooltip" display="none" style="position: absolute; display: none;">
       <b>{{muniTooltip.nombre}}: {{muniTooltip.numCasos}}</b><br>
       Casos x100,000 hab: {{muniTooltip.numCasosX100000}}
@@ -121,7 +154,7 @@ import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { Tooltip } from "../tools/tooltip";
 import { obtenerJson, sleep, eventsHandler, Player } from "../tools/tools";
 import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO } from "../tools/map_tools"
-import { Departamento, Municipio, Casos } from '../model/geo';
+import { Departamento, Municipio, CasosDiarios } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
 
 enum tipo_med{casos,casos_poblacion,casos_poblacion_km2};
@@ -138,10 +171,9 @@ export default class Mapa extends Vue {
   maxVal = 0;
   total = 0;
   ultimo = "";
-  tablaMunicipios: {departamento: string;
-            municipio: Municipio;
-            casos: number;
-          }[] = [];
+  tablaMunicipios: CasosDiarios[] = [];
+  maxTabMunis = 15;
+  tablaMunicipiosDia: CasosDiarios[] = [];
   elsalvador = "";
   departamentos: Departamento[] = [];
   municipios: Map<number,Municipio> = new Map();
@@ -150,9 +182,9 @@ export default class Mapa extends Vue {
   fechaSelIdx = 0;
   mantenerMax = true;
   documentoListo = false;
-  listaCasosFecha: Map<string,Casos[]> = new Map();
+  listaCasosDiariosFecha: Map<string,CasosDiarios[]> = new Map();
 
-  player = new Player(this.cambiarFecha, 300);
+  player = new Player(this.cambiarFecha, 200);
 
   tipoEscala:tipo_esc = tipo_esc.trigonometrica;
   
@@ -174,8 +206,13 @@ export default class Mapa extends Vue {
     this.fechaSelIdx = this.player.idx;
   }
 
+  actualizarFecha(e: InputEvent){
+    let i = this.fechasCasos.findIndex(v => v == (e.target as HTMLInputElement)?.value);
+    this.fechaSelIdx = (i >= 0) ? i : this.maxIdxFechas;
+  }
+
   //Casos
-  casos: Casos[] = [];
+  casos_diarios: CasosDiarios[] = [];
   muniTooltip: any = {nombre:'',numCasos:0, numCasosX100000: 0};
   casosImportados = [37,40,50,56,63,72,84,93,107,108,113,117,117,117];
   municipiosConCasos(){
@@ -265,33 +302,61 @@ export default class Mapa extends Vue {
   async fechaSelIdxChanged(){
     const fecString = this.fechasCasos[this.fechaSelIdx];
 
-    this.casos = await this.obtenerCasos(fecString);
+    this.casos_diarios = await this.obtenerCasosDiarios(fecString);
     this.mostrar();
+
+    this.actualizarTablas();
+  }
+
+  actualizarTablas(){
+    requestAnimationFrame(() => {
+      this.tablaMunicipiosDia = this.casos_diarios.filter(v => v.casos_diarios > 0);
+
+      this.tablaMunicipios = this.casos_diarios
+        .filter(v => v.casos > 0)
+        .sort((a, b) => b.casos - a.casos)
+        .slice(0,this.maxTabMunis);
+    });
+  }
+
+  async prefetchCasos(waitFor: number = 0){
+    const promesas: Array<Promise<CasosDiarios[]>> = []
+    this.fechasCasos.forEach(fecString => {
+      promesas.push(this.obtenerCasosDiarios(fecString));
+    });
+
+    if(waitFor > 0)
+      await Promise.all(promesas.slice(0,waitFor));
   }
 
   async reproducir(){
     if(this.player.playing) return this.player.stop();
     this.player.estadoRep = "Cargando...";
 
-    const promesas: Array<Promise<Casos[]>> = []
-    this.fechasCasos.forEach(fecString => promesas.push(this.obtenerCasos(fecString)));
-    await (Promise.all(promesas.slice(0,10))); //espero a que hayan cargado al menos los primeros 10 para reproducir
+    await this.prefetchCasos(15); //espero a que hayan cargado al menos los primeros 15 para reproducir
 
     this.player.estadoRep = "";
     this.player.max = this.maxIdxFechas;
     this.player.play();
   }
 
-  async obtenerCasos(fecString: string): Promise<Casos[]>{
-    const casos = this.listaCasosFecha.get(fecString);
+  async obtenerCasosDiarios(fecString: string): Promise<CasosDiarios[]>{
+    const casos = this.listaCasosDiariosFecha.get(fecString);
 
     if(casos != undefined) return casos;
     
-    const casos2 = (await obtenerJson("/casos_covid/"+ fecString,{method:'get', mode: "cors"})) || [];
-    this.listaCasosFecha.set(fecString,casos2);
+    let casos2: CasosDiarios[] = (await obtenerJson("/casos_diarios/"+ fecString,{method:'get', mode: "cors", cache: "default"})) || [];
+    casos2 = casos2.map(c => ({
+      id: c.id,
+      id_municipio: c.id_municipio,
+      fecha: c.fecha,
+      casos: c.casos,
+      casos_diarios: c.casos_diarios,
+      municipio: this.municipios.get(c.id_municipio) as Municipio
+    }));
+    this.listaCasosDiariosFecha.set(fecString,casos2);
     return casos2;
   }
-
 
   resaltarMunicipio(muni: any, resaltar = true) {
     if (resaltar) {
@@ -302,10 +367,29 @@ export default class Mapa extends Vue {
     }
   }
 
-  mostrar() {
-    this.tablaMunicipios = [];
+  colorProporcional(casos:number, maxVal: number, escalaMin: number, escalaMax: number) {
+    let proporcional: number;
 
-    const r = this.casos.reduce((p,c) => {
+    switch(this.tipoEscala){
+      case tipo_esc.logaritmica:
+        proporcional = ((maxVal / Math.log10(maxVal)) * Math.log10(casos)) * 100 / maxVal;
+        break;
+      case tipo_esc.trigonometrica:
+        proporcional = 100 * Math.sin(Math.asin(1) * casos / maxVal);
+        break;
+      case tipo_esc.raiz_cuadrada:
+        proporcional = 100 * Math.sqrt(casos) / Math.sqrt(maxVal);
+        break;
+      default:
+        proporcional = casos * 100 / maxVal;
+    }
+
+    const colorProporcional = (proporcional * (escalaMax - escalaMin) / 100 ) + escalaMin;
+    return colorProporcional;
+  }
+
+  mostrar() {
+    const r = this.casos_diarios.reduce((p,c) => {
       return {
         tot:p.tot + c.casos, 
         max:Math.max(p.max,c.casos),
@@ -317,47 +401,25 @@ export default class Mapa extends Vue {
     if(this.maxVal == 0 || !this.mantenerMax)
       this.maxVal = r.max;
 
-    this.municipios.forEach(muni => {
-      muni.numCasos = 0;
-      muni.numCasosX100000 = 0;
-      colorearMunicipio(muni, COLOR_DEFAULT);
-    });
+    requestAnimationFrame(() => {
+      this.municipios.forEach(muni => {
+        muni.numCasos = 0;
+        muni.numCasosX100000 = 0;
+        colorearMunicipio(muni, COLOR_DEFAULT);
+      });
+      for(const c of this.casos_diarios){
+        const muni = c.municipio;
+        if(muni != undefined){
+          muni.numCasos = c.casos;
+          muni.numCasosX100000 = Math.round((c.casos * 100000 / muni.poblacion) * 10) / 10;
 
-    for(const c of this.casos){
-      const muni = this.municipios.get(c.municipio.id);
-      if(muni != undefined){
-        muni.numCasos = c.casos;
-        muni.numCasosX100000 = Math.round((c.casos * 100000 / muni.poblacion) * 10) / 10;
-        
-        if (c.casos > 0){
-          let proporcional: number;
-          if(this.tipoEscala == tipo_esc.logaritmica){
-            proporcional = ((this.maxVal / Math.log10(this.maxVal)) * Math.log10(c.casos)) * 100 / this.maxVal;
-          }else if(this.tipoEscala == tipo_esc.trigonometrica){
-            proporcional = 100 * Math.sin(Math.asin(1) * c.casos / this.maxVal);
-          }else if(this.tipoEscala == tipo_esc.raiz_cuadrada){
-            proporcional = 100 * Math.sqrt(c.casos) / Math.sqrt(this.maxVal);
-          } else{
-            proporcional = c.casos * 100 / this.maxVal;
-          }
-          
-          this.tablaMunicipios.push({
-            departamento: muni.departamento.nombre,
-            municipio: muni,
-            casos: c.casos
-          });
-          colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional - (100 - proporcional) * 0.05) + "%)");
-          //colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional) + "%)");
+          let proporcional: number = this.colorProporcional(c.casos,this.maxVal,5,100);
+          colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional) + "%)");
+        }else{
+          console.error('municipio',c.municipio.id, 'no encontrado');
         }
-      }else{
-        console.error('municipio',c.municipio.id, 'no encontrado');
       }
-    }
-
-    
-
-    this.tablaMunicipios.sort((a: any, b: any) => b.casos - a.casos);
-    this.tablaMunicipios = this.tablaMunicipios.slice(0,10);
+    });
   }
 
   configurarEventosMunicipio(muni: Municipio){
@@ -393,7 +455,6 @@ export default class Mapa extends Vue {
   }
 
   init() {
-
     if(this.departamentos.length == 0){
       console.log('departamentos no cargados, reintentando');
       return setTimeout(this.init,250);
@@ -408,6 +469,7 @@ export default class Mapa extends Vue {
       const cod = dep.codigo;
       const depLayer = svgObject.getElementsByTagName('g').namedItem(cod);
       for (const muni of dep.municipios) {
+        if(muni.id == 0) break;
         const muniLayer = depLayer
           ?.getElementsByTagName("g")
           .namedItem(muni.codigo);
@@ -419,18 +481,16 @@ export default class Mapa extends Vue {
         } else console.warn(dep.nombre, muni.nombre, "not found");
       }
     }
-    this.mostrar();
+
     this.svg = svgPanZoom('#mapa',{
       customEventsHandler: eventsHandler,
       minZoom: 0.8
     });
-    //this.svg.setOnZoom():
   }
 
   mounted() {
     (async () => {
       try {
-        this.casos = await obtenerJson("/casos_covid",{method:'get'});
         this.fechasCasos = await obtenerJson("/fechas_casos");
 
         if(this.departamentos.length == 0) {
@@ -442,8 +502,11 @@ export default class Mapa extends Vue {
             }
           this.init();
         }
-        
+
+        this.casos_diarios = await this.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas]);
         this.fechaSelIdx = this.maxIdxFechas;
+
+        this.prefetchCasos();
       } catch (e) {
         console.error(e);
       }
@@ -508,6 +571,7 @@ export default class Mapa extends Vue {
 .tablaMunicipios td th {
   border: 1px solid white;
   text-align: left;
+  width: 90%;
 }
 
 h3 {
@@ -555,5 +619,24 @@ body {
 }
 h3 {
   margin-top: 20px;
+}
+.grid-tablas{
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 10px;
+}
+#fechaSel{
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-weight: bold;
+  color: inherit;
+}
+@media (max-width: 600px){
+.grid-tablas{
+  grid-template-columns: auto;
+  column-gap: 5x;
+  row-gap: 10px;
+}
 }
 </style>
