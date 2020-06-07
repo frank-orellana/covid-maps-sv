@@ -51,6 +51,8 @@
         Creador: Franklin Orellana, Tritium S.p.A. © 2020 - Fuente de datos: <a class="link" href="https://covid19.gob.sv/">covid19.gob.sv</a>
     </div>
 
+    <SettingsMapa :tipoEscala="tipoEscala" />
+
     <table id="slider" style="font-size:small; font-weight: bold; width:100%">
       <tr>
         <td class="label-small">{{formatFechaJSON(fechasCasos[0])}}</td>
@@ -63,7 +65,7 @@
     
     <table id="colorbar" width="100%">
       <tr>
-        <td style="background:#77dd77; width:4%">&nbsp;</td>
+        <td :style="{background:colorBase}" @click="toggleColorBase" style="; width:4%">&nbsp;</td>
         <td colspan="5" class="colorbar"></td>
       </tr>
       <tr class="label">
@@ -153,17 +155,9 @@
 import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { Tooltip } from "../tools/tooltip";
 import { obtenerJson, sleep, eventsHandler, Player } from "../tools/tools";
-import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO } from "../tools/map_tools"
+import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO, colorProporcional, tipo_esc, tipo_med } from "../tools/map_tools"
 import { Departamento, Municipio, CasosDiarios } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
-
-enum tipo_med{casos,casos_poblacion,casos_poblacion_km2};
-class tipo_esc{
-  static lineal = "0";
-  static logaritmica = "1";
-  static trigonometrica = "2";
-  static raiz_cuadrada = "3"
-};
 
 @Component
 export default class Mapa extends Vue {
@@ -189,6 +183,7 @@ export default class Mapa extends Vue {
   tipoEscala:tipo_esc = tipo_esc.trigonometrica;
   
   tipoMedicion:tipo_med = tipo_med.casos;
+  colorBase = COLOR_DEFAULT;
   showSettings = false;
 
   puntoEscala(pos:number){
@@ -204,6 +199,14 @@ export default class Mapa extends Vue {
 
   cambiarFecha() {
     this.fechaSelIdx = this.player.idx;
+  }
+  toggleColorBase() {
+    if(this.colorBase == COLOR_DEFAULT)
+      this.colorBase='white';
+    else
+      this.colorBase=COLOR_DEFAULT;
+
+    this.mostrar();
   }
 
   actualizarFecha(e: InputEvent){
@@ -340,12 +343,12 @@ export default class Mapa extends Vue {
     this.player.play();
   }
 
-  async obtenerCasosDiarios(fecString: string): Promise<CasosDiarios[]>{
+  async obtenerCasosDiarios(fecString: string, cache : "default" | "no-store" | "reload" | "no-cache" | "force-cache" | "only-if-cached" = 'default'): Promise<CasosDiarios[]>{
     const casos = this.listaCasosDiariosFecha.get(fecString);
 
     if(casos != undefined) return casos;
     
-    let casos2: CasosDiarios[] = (await obtenerJson("/casos_diarios/"+ fecString,{method:'get', mode: "cors", cache: "default"})) || [];
+    let casos2: CasosDiarios[] = (await obtenerJson("/casos_diarios/"+ fecString,{method:'get', mode: "cors", cache: cache})) || [];
     casos2 = casos2.map(c => ({
       id: c.id,
       id_municipio: c.id_municipio,
@@ -367,27 +370,6 @@ export default class Mapa extends Vue {
     }
   }
 
-  colorProporcional(casos:number, maxVal: number, escalaMin: number, escalaMax: number) {
-    let proporcional: number;
-
-    switch(this.tipoEscala){
-      case tipo_esc.logaritmica:
-        proporcional = ((maxVal / Math.log10(maxVal)) * Math.log10(casos)) * 100 / maxVal;
-        break;
-      case tipo_esc.trigonometrica:
-        proporcional = 100 * Math.sin(Math.asin(1) * casos / maxVal);
-        break;
-      case tipo_esc.raiz_cuadrada:
-        proporcional = 100 * Math.sqrt(casos) / Math.sqrt(maxVal);
-        break;
-      default:
-        proporcional = casos * 100 / maxVal;
-    }
-
-    const colorProporcional = (proporcional * (escalaMax - escalaMin) / 100 ) + escalaMin;
-    return colorProporcional;
-  }
-
   mostrar() {
     const r = this.casos_diarios.reduce((p,c) => {
       return {
@@ -405,7 +387,7 @@ export default class Mapa extends Vue {
       this.municipios.forEach(muni => {
         muni.numCasos = 0;
         muni.numCasosX100000 = 0;
-        colorearMunicipio(muni, COLOR_DEFAULT);
+        colorearMunicipio(muni, this.colorBase);
       });
       for(const c of this.casos_diarios){
         const muni = c.municipio;
@@ -413,7 +395,7 @@ export default class Mapa extends Vue {
           muni.numCasos = c.casos;
           muni.numCasosX100000 = Math.round((c.casos * 100000 / muni.poblacion) * 10) / 10;
 
-          let proporcional: number = this.colorProporcional(c.casos,this.maxVal,5,100);
+          let proporcional: number = colorProporcional(c.casos,this.maxVal,1,100,this.tipoEscala);
           colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional) + "%)");
         }else{
           console.error('municipio',c.municipio.id, 'no encontrado');
@@ -476,7 +458,7 @@ export default class Mapa extends Vue {
         if (muniLayer) {
           muni.elements = muniLayer.getElementsByTagName("path");
 
-          colorearMunicipio(muni,COLOR_DEFAULT);
+          colorearMunicipio(muni,this.colorBase);
           this.configurarEventosMunicipio(muni);
         } else console.warn(dep.nombre, muni.nombre, "not found");
       }
@@ -494,7 +476,7 @@ export default class Mapa extends Vue {
         this.fechasCasos = await obtenerJson("/fechas_casos");
 
         if(this.departamentos.length == 0) {
-          this.departamentos = await obtenerJson("/departamentos/codigo_pais/503/si",{method:'get',cache:'force-cache'});
+          this.departamentos = await obtenerJson("/departamentos/codigo_pais/503/si",{method:'get',cache:'default'});
           for(let d of this.departamentos)
             for(let m of d.municipios){
               m.departamento = d;
@@ -503,7 +485,7 @@ export default class Mapa extends Vue {
           this.init();
         }
 
-        this.casos_diarios = await this.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas]);
+        this.casos_diarios = await this.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas],'no-cache');
         this.fechaSelIdx = this.maxIdxFechas;
 
         this.prefetchCasos();
