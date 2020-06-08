@@ -5,12 +5,12 @@
     <p style="font-size:small; font-weight: bold; text-align: left;position:absolute;top:3mm;left: 15mm;">
       BETA
     </p>
-    <p style="text-align: left;position:absolute;top:75mm;" class="label">
+    <p style="text-align: left;position:absolute;top:75mm;left: 2mm;" class="label">
       Fecha: <input id="fechaSel" type="date"
        :value="fechasCasos[fechaSelIdx]" @input="actualizarFecha($event)"
        :min="fechasCasos[0]" :max="fechasCasos[maxIdxFechas]">
     </p>
-    <p id="playerControls" style="position:absolute;top:80mm;">
+    <p id="playerControls" style="position:absolute;top:80mm;left: 2mm;">
       <img @click="reproducir"  v-if="!player.playing" src="img/play.png" class="player_button" />&nbsp;
       <img  @click="player.play()" v-if="player.paused && player.playing" src="img/play.png" class="player_button" />&nbsp;
       <img  @click="player.pause()" v-if="!player.paused && player.playing" src="img/pause.png" class="player_button" />&nbsp;
@@ -80,7 +80,7 @@
         <td colspan="6" style="text-size:smedium;text-align:center;">
           Total de casos LOCALES en todo el país:
           <b>{{total}}</b>
-          más {{numCasosImportados}} importados: {{total + numCasosImportados}}<br/>
+          más {{numCasosImportados}} <span title="A partir del 29 de mayo, el gobierno cuenta los casos importados dentro de los municipios, por lo que no se puede distinguir entre locales e importados en el detalle">importados*</span>: {{total + numCasosImportados}}<br/>
           {{municipiosConCasos()}} municipios de 262 ({{ Math.round(100 * municipiosConCasos() / 262)}}%) con al menos 1 caso
         </td>
       </tr>
@@ -88,13 +88,13 @@
     <div class="grid-tablas">
       <div>
         <table id="CasosTotales" class="tablaMunicipios"><tr>
-            <th colspan="4">Municipios con mas casos acumulados al ({{fechaSelFormateada}})</th>
+            <th colspan="4">Top Casos acumulados al ({{fechaSelFormateada}})</th>
           </tr>
           <tr>
             <th style="width:25%">Departamento</th>
             <th>Municipio</th>
             <th style="text-align:middle; width:10%;">Casos</th>
-            <th style="text-align:middle; width:10%;font-size:small;">Casos por<br/>100000 hab.</th>
+            <th style="text-align:middle; width:10%;font-size:x-small;">Casos x<br/>100000 hab.</th>
           </tr>
           <tr
             v-for="x in tablaMunicipios"
@@ -118,7 +118,7 @@
       <div>
         <table id="CasosDiarios" class="tablaMunicipios">
           <tr>
-            <th colspan="3">Municipios con casos diarios ({{fechaSelFormateada}}):</th>
+            <th colspan="3">Casos diarios ({{fechaSelFormateada}}):</th>
           </tr>
           <tr>
             <th style="width:25%">Departamento</th>
@@ -606,6 +606,7 @@ h3 {
   display: grid;
   grid-template-columns: auto auto;
   column-gap: 10px;
+  margin: 2mm;
 }
 #fechaSel{
   background: transparent;
