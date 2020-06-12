@@ -3,7 +3,11 @@ import {Municipio} from '../model/geo'
 export const COLOR_DEFAULT = "#77dd77"
 export const COLOR_RESALTADO = "gray"
 
-export enum tipo_med{casos,casos_poblacion,casos_poblacion_km2};
+export class tipo_med{
+	static casos = "0";
+	static casos_poblacion = "1"
+	static casos_poblacion_km2 = "2"
+};
 export class tipo_esc{
   static lineal = "0";
   static logaritmica = "1";

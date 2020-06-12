@@ -25,16 +25,41 @@
     </div>
 
     <div id="settingsDialog" style="position:absolute; top:5mm; text-align: middle; margin-left:auto; left:0; right:65px; width:175px; background: white; padding: 10px;" v-if="showSettings">
-      <div id="escala" class="label-small" >
-        <label>Escala:
-        <select v-model="tipoEscala" class="label-small" @input="showSettings = false">
-          <option value="0">lineal</option>
-          <option value="1">logaritmica</option>
-          <option value="2">trigonométrica</option>
-          <option value="3">raiz</option>
-        </select>
-        </label>
-      </div>
+      <table class="label-small" >
+        <tr>
+          <td>
+            <label for="selectTipoMed">Color por:</label>
+          </td>
+          <td>
+            <select v-model="tipoMedicion" id="selectTipoMed" class="label-small" @input="showSettings = false">
+              <option value="0">Casos</option>
+              <option value="1">Casos x Población</option>
+              <!--option value="2">Casos x Población x Área</option-->
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label>Color base:</label>
+          </td>
+          <td>
+            <div :style="{background:colorBase}" @click="toggleColorBase" style="height:15px; width:20px; box-shadow:inset 0 0 2px #000;">&nbsp;</div>
+          </td>
+        </tr>
+        <tr id="escala">
+          <td>
+            <label for="selectTipoEscala">Escala:</label>
+          </td>
+          <td>
+            <select v-model="tipoEscala" id="selectTipoEscala" class="label-small" @input="showSettings = false">
+              <option value="0">lineal</option>
+              <option value="1">logaritmica</option>
+              <option value="2">trigonométrica</option>
+              <option value="3">raiz</option>
+            </select>
+          </td>
+        </tr>
+      </table>
     </div>
 
     <img name="zoomOut" @click="svg.zoomOut()" src="img/zoomout.svg" class="zoom-control" style="position:absolute;top:5mm;left: 5mm;" />
@@ -50,8 +75,6 @@
     <div class="copy">
         Creador: Franklin Orellana, Tritium S.p.A. © 2020 - Fuente de datos: <a class="link" href="https://covid19.gob.sv/">covid19.gob.sv</a>
     </div>
-
-    <SettingsMapa :tipoEscala="tipoEscala" />
 
     <table id="slider" style="font-size:small; font-weight: bold; width:100%">
       <tr>
@@ -264,6 +287,11 @@ export default class Mapa extends Vue {
   toggleEscala(){
     this.mostrar();
   }
+  @Watch('tipoMedicion')
+  toggleMed(){
+    this.inicializarMaximos();
+    this.mostrar();
+  }
 
   async zoomInMuni(){
     console.log(this.zoomedInMuni);
@@ -306,6 +334,7 @@ export default class Mapa extends Vue {
     const fecString = this.fechasCasos[this.fechaSelIdx];
 
     this.casos_diarios = await this.obtenerCasosDiarios(fecString);
+    this.total = this.casos_diarios.reduce((p,c) => p + c.casos, 0);
     this.mostrar();
 
     this.actualizarTablas();
@@ -371,18 +400,6 @@ export default class Mapa extends Vue {
   }
 
   mostrar() {
-    const r = this.casos_diarios.reduce((p,c) => {
-      return {
-        tot:p.tot + c.casos, 
-        max:Math.max(p.max,c.casos),
-        max_casos_pob:Math.max(p.max,c.casos*100000/c.municipio.poblacion),
-        max_casos_pob_km2:Math.max(p.max,c.casos*100000/Math.log(c.municipio.poblacion))
-      }
-    }, {tot:0,max:0,max_casos_pob:0,max_casos_pob_km2:0});
-    this.total = r.tot;
-    if(this.maxVal == 0 || !this.mantenerMax)
-      this.maxVal = r.max;
-
     requestAnimationFrame(() => {
       this.municipios.forEach(muni => {
         muni.numCasos = 0;
@@ -395,7 +412,18 @@ export default class Mapa extends Vue {
           muni.numCasos = c.casos;
           muni.numCasosX100000 = Math.round((c.casos * 100000 / muni.poblacion) * 10) / 10;
 
-          let proporcional: number = colorProporcional(c.casos,this.maxVal,1,100,this.tipoEscala);
+          let proporcional: number = 0;
+          switch(this.tipoMedicion){
+            case tipo_med.casos:
+              proporcional = colorProporcional(c.casos,this.maxVal,1,100,this.tipoEscala);
+              break;
+            case tipo_med.casos_poblacion:
+              proporcional = colorProporcional(muni.numCasosX100000,this.maxVal,1,100,this.tipoEscala);
+              break;
+            case tipo_med.casos_poblacion_km2:
+              proporcional = colorProporcional(c.casos,this.maxVal,1,100,this.tipoEscala);
+              break;
+          }
           colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional) + "%)");
         }else{
           console.error('municipio',c.municipio.id, 'no encontrado');
@@ -470,6 +498,30 @@ export default class Mapa extends Vue {
     });
   }
 
+  inicializarMaximos(){
+    const r = this.casos_diarios.reduce((p,c) => {
+      return {
+        tot:p.tot + c.casos, 
+        max:Math.max(p.max,c.casos),
+        max_casos_pob:Math.max(p.max_casos_pob,c.casos*100000/c.municipio.poblacion),
+        max_casos_pob_km2:Math.max(p.max_casos_pob_km2,c.casos*100000/Math.log(c.municipio.poblacion))
+      }
+    }, {tot:0,max:0,max_casos_pob:0,max_casos_pob_km2:0});
+    this.total = r.tot;
+    switch(this.tipoMedicion){
+      case tipo_med.casos:
+        this.maxVal = r.max;
+        break;
+      case tipo_med.casos_poblacion:
+        this.maxVal = parseFloat(r.max_casos_pob.toFixed(1));
+        break;
+      case tipo_med.casos_poblacion_km2:
+        this.maxVal = r.max_casos_pob_km2;
+        break;
+    }
+    
+  }
+
   mounted() {
     (async () => {
       try {
@@ -486,6 +538,7 @@ export default class Mapa extends Vue {
         }
 
         this.casos_diarios = await this.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas],'no-cache');
+        this.inicializarMaximos();
         this.fechaSelIdx = this.maxIdxFechas;
 
         this.prefetchCasos();
@@ -621,5 +674,8 @@ h3 {
   column-gap: 5x;
   row-gap: 10px;
 }
+}
+#settingsDialog {
+  text-align:left;
 }
 </style>
