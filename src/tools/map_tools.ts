@@ -6,7 +6,7 @@ export const COLOR_RESALTADO = "gray"
 export class tipo_med{
 	static casos = "0";
 	static casos_poblacion = "1"
-	static casos_poblacion_km2 = "2"
+	static casos_km2 = "2"
 };
 export class tipo_esc{
   static lineal = "0";

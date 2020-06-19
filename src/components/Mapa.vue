@@ -26,7 +26,7 @@
 
     <div id="settingsDialog" style="position:absolute; top:5mm; text-align: middle; margin-left:auto; left:0; right:65px; width:175px; background: white; padding: 10px;" v-if="showSettings">
       <table class="label-small" >
-        <tr>
+        <tr id="tipoMed">
           <td>
             <label for="selectTipoMed">Color por:</label>
           </td>
@@ -34,7 +34,7 @@
             <select v-model="tipoMedicion" id="selectTipoMed" class="label-small" @input="showSettings = false">
               <option value="0">Casos</option>
               <option value="1">Casos x Población</option>
-              <!--option value="2">Casos x Población x Área</option-->
+              <option value="2">Casos x Km2</option>
             </select>
           </td>
         </tr>
@@ -70,7 +70,7 @@
 
     <select v-model="zoomedInMuni" @change="zoomInMuni">
       <option />
-      <option v-for="m of Array.from(municipios.values()).sort((a,b) => a.nombre < b.nombre ? -1:0)" v-bind:key="m.id" :value="m">{{m.nombre}}, {{m.departamento.nombre}}</option>
+      <option v-for="m of Array.from(municipios.values()).sort((a,b) => a.nombre <= b.nombre ? -1:1)" v-bind:key="m.id" :value="m">{{m.nombre}}, {{m.departamento.nombre}}</option>
     </select>
     <div class="copy">
         Creador: Franklin Orellana, Tritium S.p.A. © 2020 - Fuente de datos: <a class="link" href="https://covid19.gob.sv/">covid19.gob.sv</a>
@@ -169,7 +169,8 @@
     
     <div id="tooltip" display="none" style="position: absolute; display: none;">
       <b>{{muniTooltip.nombre}}: {{muniTooltip.numCasos}}</b><br>
-      Casos x100,000 hab: {{muniTooltip.numCasosX100000}}
+      Casos x 100K hab: {{muniTooltip.numCasosX100000}}<br>
+      Casos x Km2: {{muniTooltip.numCasosXKm2}}
     </div>
   </div>
 </template>
@@ -181,6 +182,8 @@ import { obtenerJson, sleep, eventsHandler, Player } from "../tools/tools";
 import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO, colorProporcional, tipo_esc, tipo_med } from "../tools/map_tools"
 import { Departamento, Municipio, CasosDiarios } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
+
+
 
 @Component
 export default class Mapa extends Vue {
@@ -245,6 +248,8 @@ export default class Mapa extends Vue {
     return Array.from(this.municipios).reduce((p,[i,c]) => (c.numCasos > 0)?p + 1:p ,0)
   }
 
+  tooltipMunicipio!: Tooltip;
+
   svg: SvgPanZoom.Instance | undefined = undefined;
 
   
@@ -258,9 +263,11 @@ export default class Mapa extends Vue {
       //incrementeamos el borde y el color
       for(let x = 1; x <= 10; x++){
         for(let i = 0; i < e.length; i++){
-          e[i].style.strokeWidth = (0.132292 + (x * 0.09)).toString();
-          const col = 192 - (x * 10);
-          e[i].style.stroke = `rgb(${col}, ${col}, ${col})`;
+          requestAnimationFrame(() => {
+            e[i].style.strokeWidth = (0.132292 + (x * 0.09)).toString();
+            const col = 192 - (x * 10);
+            e[i].style.stroke = `rgb(${col}, ${col}, ${col})`;
+          });
         }
         await sleep(120);
       }
@@ -268,9 +275,11 @@ export default class Mapa extends Vue {
       //decrementeamos el borde y el color
       for(let x = 1; x <= 10; x++){
         for(let i = 0; i < e.length; i++){
-          e[i].style.strokeWidth = (1.032292 - (x * 0.09)).toString();
-          const col = 92 + (x * 10);
-          e[i].style.stroke = `rgb(${col}, ${col}, ${col})`;;
+          requestAnimationFrame(() => {
+            e[i].style.strokeWidth = (1.032292 - (x * 0.09)).toString();
+            const col = 92 + (x * 10);
+            e[i].style.stroke = `rgb(${col}, ${col}, ${col})`;
+          });
           await sleep(45);
         }
       }
@@ -404,6 +413,7 @@ export default class Mapa extends Vue {
       this.municipios.forEach(muni => {
         muni.numCasos = 0;
         muni.numCasosX100000 = 0;
+        muni.numCasosXKm2 = 0;
         colorearMunicipio(muni, this.colorBase);
       });
       for(const c of this.casos_diarios){
@@ -411,6 +421,7 @@ export default class Mapa extends Vue {
         if(muni != undefined){
           muni.numCasos = c.casos;
           muni.numCasosX100000 = Math.round((c.casos * 100000 / muni.poblacion) * 10) / 10;
+          muni.numCasosXKm2 = parseFloat((c.casos / muni.area).toFixed(3));
 
           let proporcional: number = 0;
           switch(this.tipoMedicion){
@@ -420,8 +431,8 @@ export default class Mapa extends Vue {
             case tipo_med.casos_poblacion:
               proporcional = colorProporcional(muni.numCasosX100000,this.maxVal,1,100,this.tipoEscala);
               break;
-            case tipo_med.casos_poblacion_km2:
-              proporcional = colorProporcional(c.casos,this.maxVal,1,100,this.tipoEscala);
+            case tipo_med.casos_km2:
+              proporcional = colorProporcional(muni.numCasosXKm2 * 100,this.maxVal * 100,1,100,this.tipoEscala);
               break;
           }
           colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional) + "%)");
@@ -440,19 +451,19 @@ export default class Mapa extends Vue {
         this.muniTooltip = muni;
       }, {passive: true});
       e.addEventListener('mousemove',(evt: MouseEvent) => {
-        Tooltip.showTooltip(evt);
+        this.tooltipMunicipio.showTooltip(evt);
       }, {passive: true});
       e.addEventListener('mouseout', (evt) => {
         //@ts-ignore
         if(e.noOcultarOnOut != true)
-          Tooltip.hideTooltip();
+          this.tooltipMunicipio.hideTooltip();
         
         this.resaltarMunicipio(muni, false);
       }, {passive: true});
       e.addEventListener('click', (evt) => {
         //@ts-ignore
         if(e.noOcultarOnOut != true){
-          Tooltip.showTooltip(evt);
+          this.tooltipMunicipio.showTooltip(evt);
           this.muniTooltip = muni;
           //@ts-ignore
           e.noOcultarOnOut = true;
@@ -465,6 +476,7 @@ export default class Mapa extends Vue {
   }
 
   init() {
+    console.log('init');
     if(this.departamentos.length == 0){
       console.log('departamentos no cargados, reintentando');
       return setTimeout(this.init,250);
@@ -504,9 +516,9 @@ export default class Mapa extends Vue {
         tot:p.tot + c.casos, 
         max:Math.max(p.max,c.casos),
         max_casos_pob:Math.max(p.max_casos_pob,c.casos*100000/c.municipio.poblacion),
-        max_casos_pob_km2:Math.max(p.max_casos_pob_km2,c.casos*100000/Math.log(c.municipio.poblacion))
+        max_casos_km2:Math.max(p.max_casos_km2,c.casos/c.municipio.area)
       }
-    }, {tot:0,max:0,max_casos_pob:0,max_casos_pob_km2:0});
+    }, {tot:0,max:0,max_casos_pob:0,max_casos_km2:0});
     this.total = r.tot;
     switch(this.tipoMedicion){
       case tipo_med.casos:
@@ -515,11 +527,10 @@ export default class Mapa extends Vue {
       case tipo_med.casos_poblacion:
         this.maxVal = parseFloat(r.max_casos_pob.toFixed(1));
         break;
-      case tipo_med.casos_poblacion_km2:
-        this.maxVal = r.max_casos_pob_km2;
+      case tipo_med.casos_km2:
+        this.maxVal = parseFloat(r.max_casos_km2.toFixed(1));
         break;
     }
-    
   }
 
   mounted() {
@@ -529,6 +540,9 @@ export default class Mapa extends Vue {
 
         if(this.departamentos.length == 0) {
           this.departamentos = await obtenerJson("/departamentos/codigo_pais/503/si",{method:'get',cache:'default'});
+          if(!this.departamentos[0].municipios[0].hasOwnProperty('area')){
+            this.departamentos = await obtenerJson("/departamentos/codigo_pais/503/si",{method:'get',cache:'reload'});
+          }
           for(let d of this.departamentos)
             for(let m of d.municipios){
               m.departamento = d;
@@ -536,6 +550,8 @@ export default class Mapa extends Vue {
             }
           this.init();
         }
+
+        this.tooltipMunicipio = new Tooltip('tooltip');
 
         this.casos_diarios = await this.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas],'no-cache');
         this.inicializarMaximos();

@@ -16,6 +16,8 @@ export interface Municipio {
   elements: HTMLCollectionOf<SVGPathElement>;
   numCasos: number;
   numCasosX100000: number;
+  numCasosXKm2: number;
+  area: number;
   departamento: Departamento;
 }
 
@@ -25,6 +27,7 @@ export interface MunicipioJson {
   nombre: string;
   nombre_simple: string;
   poblacion: number;
+  area: number;
 }
 
 export interface Departamento {
@@ -32,5 +35,6 @@ export interface Departamento {
   codigo: string;
   nombre: string;
   poblacion: number;
+  area: number;
   municipios: Municipio[];
 }
