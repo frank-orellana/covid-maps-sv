@@ -529,7 +529,8 @@ export default class Mapa extends Vue {
   }
 
   inicializarMaximos(){
-    const r = this.casos_diarios.reduce((p,c) => {
+    const casos = this.listaCasosDiariosFecha.get(this.fechasCasos[this.maxIdxFechas]) || [];
+    const r = casos.reduce((p,c) => {
       return {
         tot:p.tot + c.casos, 
         max:Math.max(p.max,c.casos),
