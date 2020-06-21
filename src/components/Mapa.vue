@@ -46,6 +46,14 @@
             <div :style="{background:colorBase}" @click="toggleColorBase" style="height:15px; width:20px; box-shadow:inset 0 0 2px #000;">&nbsp;</div>
           </td>
         </tr>
+        <tr>
+          <td>
+            <label>Color escala:</label>
+          </td>
+          <td>
+            <div :style="{background:colorEscala.color}" @click="toggleColorEscala" style="height:15px; width:20px; box-shadow:inset 0 0 2px #000;">&nbsp;</div>
+          </td>
+        </tr>
         <tr id="escala">
           <td>
             <label for="selectTipoEscala">Escala:</label>
@@ -89,7 +97,7 @@
     <table id="colorbar" width="100%">
       <tr>
         <td :style="{background:colorBase}" @click="toggleColorBase" style="; width:4%">&nbsp;</td>
-        <td colspan="5" class="colorbar"></td>
+        <td colspan="5" :class="[colorEscala.gradientClass]"></td>
       </tr>
       <tr class="label">
         <td style="text-align:center; width:4%">0</td>
@@ -179,7 +187,7 @@
 import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { Tooltip } from "../tools/tooltip";
 import { obtenerJson, sleep, eventsHandler, Player } from "../tools/tools";
-import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO, colorProporcional, tipo_esc, tipo_med } from "../tools/map_tools"
+import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO, colorProporcional, tipo_esc, tipo_med, coloresEscala } from "../tools/map_tools"
 import { Departamento, Municipio, CasosDiarios } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
 
@@ -210,6 +218,7 @@ export default class Mapa extends Vue {
   
   tipoMedicion:tipo_med = tipo_med.casos;
   colorBase = COLOR_DEFAULT;
+  colorEscala = coloresEscala.red;
   showSettings = false;
 
   puntoEscala(pos:number){
@@ -231,6 +240,15 @@ export default class Mapa extends Vue {
       this.colorBase='white';
     else
       this.colorBase=COLOR_DEFAULT;
+
+    this.mostrar();
+  }
+  toggleColorEscala() {
+    if(this.colorEscala == coloresEscala.red){
+      this.colorEscala = coloresEscala.blue;
+    }else{
+      this.colorEscala = coloresEscala.red;
+    }
 
     this.mostrar();
   }
@@ -435,7 +453,7 @@ export default class Mapa extends Vue {
               proporcional = colorProporcional(muni.numCasosXKm2 * 100,this.maxVal * 100,1,100,this.tipoEscala);
               break;
           }
-          colorearMunicipio(muni,"hsl(0, 100%, " + (100 - proporcional) + "%)");
+          colorearMunicipio(muni,`hsl(${this.colorEscala.hue}, 100%, ${(100 - proporcional)}%)`);
         }else{
           console.error('municipio',c.municipio.id, 'no encontrado');
         }
@@ -553,7 +571,7 @@ export default class Mapa extends Vue {
 
         this.tooltipMunicipio = new Tooltip('tooltip');
 
-        this.casos_diarios = await this.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas],'no-cache');
+        this.casos_diarios = await this.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas],'reload');
         this.inicializarMaximos();
         this.fechaSelIdx = this.maxIdxFechas;
 
@@ -593,13 +611,23 @@ export default class Mapa extends Vue {
   font-size: 9px;
 }
 
-.colorbar {
+.colorbar-red {
   height: 25px;
   background: linear-gradient(
     to right,
     hsl(0, 100%, 95%) 0%,
     hsl(0, 100%, 50%) 50%,
     hsl(0, 100%, 5%) 100%
+  );
+}
+
+.colorbar-blue {
+  height: 25px;
+  background: linear-gradient(
+    to right,
+    hsl(250, 100%, 95%) 0%,
+    hsl(250, 100%, 50%) 50%,
+    hsl(250, 100%, 5%) 100%
   );
 }
 

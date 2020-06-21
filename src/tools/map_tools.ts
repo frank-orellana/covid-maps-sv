@@ -15,6 +15,11 @@ export class tipo_esc{
   static raiz_cuadrada = "3"
 };
 
+export class coloresEscala {
+	static red = {hue:0,color:'red',gradientClass:'colorbar-red'};
+	static blue = {hue:250,color:'blue',gradientClass:'colorbar-blue'};
+}
+
 export function colorearMunicipio(muni: Municipio, color: string) {
 	if(!muni.elements) return;
 	for (let e = 0; e < muni.elements.length; e++)
