@@ -122,10 +122,11 @@
             <th colspan="4">Top Casos acumulados al ({{fechaSelFormateada}})</th>
           </tr>
           <tr>
-            <th style="width:25%">Departamento</th>
+            <th style="width:30%">Departamento</th>
             <th>Municipio</th>
             <th style="text-align:middle; width:10%;">Casos</th>
             <th style="text-align:middle; width:10%;font-size:x-small;">Casos x<br/>100000 hab.</th>
+            <th style="text-align:middle; width:15%;font-size:x-small;">Casos x<br/>Km2</th>
           </tr>
           <tr
             v-for="x in tablaMunicipios"
@@ -133,10 +134,11 @@
             @mouseover="resaltarMunicipio(x.municipio)"
             @mouseout="resaltarMunicipio(x.municipio,false)"
           >
-            <td>{{x.municipio.departamento.nombre}}</td>
-            <td>{{x.municipio.nombre}}</td>
+            <td style="text-align:left;">{{x.municipio.departamento.nombre}}</td>
+            <td style="text-align:left;">{{x.municipio.nombre}}</td>
             <td>{{x.casos}}</td>
             <td>{{x.municipio.numCasosX100000}}</td>
+            <td>{{x.municipio.numCasosXKm2.toFixed(2)}}</td>
           </tr>
           <tr>
             <td colspan="2">Total Top {{maxTabMunis}} municipios:</td>
@@ -152,7 +154,7 @@
             <th colspan="3">Casos diarios ({{fechaSelFormateada}}):</th>
           </tr>
           <tr>
-            <th style="width:25%">Departamento</th>
+            <th style="width:30%">Departamento</th>
             <th>Municipio</th>
             <th style="text-align:middle; width:10%">Casos diarios</th>
           </tr>
@@ -162,8 +164,8 @@
             @mouseover="resaltarMunicipio(x.municipio)"
             @mouseout="resaltarMunicipio(x.municipio,false)"
           >
-            <td>{{x.municipio.departamento.nombre}}</td>
-            <td>{{x.municipio.nombre}}</td>
+            <td style="text-align:left;">{{x.municipio.departamento.nombre}}</td>
+            <td style="text-align:left;">{{x.municipio.nombre}}</td>
             <td>{{x.casos_diarios}}</td>
           </tr>
           <tr>

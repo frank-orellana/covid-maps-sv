@@ -17,7 +17,7 @@ export class tipo_esc{
 
 export class coloresEscala {
 	static red = {hue:0,color:'red',gradientClass:'colorbar-red'};
-	static blue = {hue:250,color:'blue',gradientClass:'colorbar-blue'};
+	static blue = {hue:240,color:'blue',gradientClass:'colorbar-blue'};
 }
 
 export function colorearMunicipio(muni: Municipio, color: string) {
