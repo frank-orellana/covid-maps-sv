@@ -20,13 +20,14 @@ export class coloresEscala {
 	static blue = {hue:240,color:'blue',gradientClass:'colorbar-blue'};
 }
 
-export function colorearMunicipio(muni: Municipio, color: string) {
+export function colorearMunicipio(muni: Municipio, color: string) : void {
 	if(!muni.elements) return;
 	for (let e = 0; e < muni.elements.length; e++)
 		muni.elements[e].style.fill = color;
 }
 
-export function colorProporcional(casos:number, maxVal: number, escalaMin: number, escalaMax: number, tipoEscala: tipo_esc) {
+// tslint:disable-next-line: max-line-length
+export function colorProporcional(casos:number, maxVal: number, escalaMin: number, escalaMax: number, tipoEscala: tipo_esc) : number {
 	let proporcional: number;
 
 	switch(tipoEscala){
@@ -43,6 +44,6 @@ export function colorProporcional(casos:number, maxVal: number, escalaMin: numbe
 			proporcional = casos * 100 / maxVal;
 	}
 
-	const colorProporcional = (proporcional * (escalaMax - escalaMin) / 100 ) + escalaMin;
+	const colorProporcional = (proporcional * (escalaMax - escalaMin) / 100) + escalaMin;
 	return colorProporcional;
 }

@@ -13,7 +13,7 @@ export async function obtenerJson(url: string, params: RequestInit = {method: "p
 	}
 }
 
-export function cleanUpSpecialChars(str: string) {
+export function cleanUpSpecialChars(str: string) : string {
 	return str
 		.toLowerCase()
 		.replace(/[àáâãäå]/gi, "a")
@@ -25,7 +25,7 @@ export function cleanUpSpecialChars(str: string) {
 		.replace(/[^a-z0-9 ]/gi, ""); // final clean up
 }
 
-export function sleep(ms:number) {
+export async function sleep(ms:number) : Promise<unknown> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -39,11 +39,11 @@ export class Player {
   timeout: number = -1;
   delay = 30;
   callback: Function;
-  constructor(callback: Function,delay = 30){
+  constructor(callback: Function,delay : number = 30){
     this.delay = delay;
     this.callback = callback;
   }
-  play(){
+  play() : void {
 		this.playing = true;
 		this.paused = false;
 
@@ -57,12 +57,12 @@ export class Player {
     }else
       this.stop();
   }
-  stop(){
+  stop() : void {
 		this.playing = false;
     this.idx = 0;
     clearTimeout(this.timeout);
   }
-  pause(){
+  pause() : void {
 		clearTimeout(this.timeout);
 		this.paused = true;
   }
@@ -72,7 +72,7 @@ let hammer: HammerManager;
 
 export const eventsHandler = {
 	haltEventListeners: ['touchstart', 'touchend', 'touchmove', 'touchleave', 'touchcancel']
-, init: function(options:any) {
+, init: function(options:any) : void {
 		var instance = options.instance
 			, initialScale = 1
 			, pannedX = 0
@@ -89,12 +89,12 @@ export const eventsHandler = {
 		hammer.get('pinch').set({enable: true})
 
 		// Handle double tap
-		hammer.on('doubletap', function(ev){
+		hammer.on('doubletap', function(ev : HammerInput) : void {
 			instance.zoomIn()
 		})
 
 		// Handle pan
-		hammer.on('panstart panmove', function(ev){
+		hammer.on('panstart panmove', function(ev : HammerInput) : void {
 			// On pan start reset panned variables
 			if (ev.type === 'panstart') {
 				pannedX = 0
@@ -108,7 +108,7 @@ export const eventsHandler = {
 		})
 
 		// Handle pinch
-		hammer.on('pinchstart pinchmove', function(ev){
+		hammer.on('pinchstart pinchmove', function(ev : HammerInput) : void {
 			// On pinch start remember initial zoom
 			if (ev.type === 'pinchstart') {
 				initialScale = instance.getZoom()
@@ -119,10 +119,10 @@ export const eventsHandler = {
 		})
 
 		// Prevent moving the page on some devices when panning over SVG
-		options.svgElement.addEventListener('touchmove', function(e:Event){ e.preventDefault(); });
+		options.svgElement.addEventListener('touchmove', function(e:Event) : void { e.preventDefault(); });
 	}
 
-, destroy: function(){
+, destroy: function() : void {
 		hammer.destroy()
 	}
 }

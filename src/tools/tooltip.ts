@@ -8,7 +8,7 @@ export class Tooltip {
 		if(this.element == null)
 			console.error(idElement,' not Found!');
 	}
-	showTooltip(evt: MouseEvent) {
+	showTooltip(evt: MouseEvent) :void {
 		if(this.element != null){
 			this.element.style.display = "block";
 			this.element.style.left = evt.pageX + 10 + 'px';
@@ -18,7 +18,7 @@ export class Tooltip {
 		}
 	};
 	
-	hideTooltip() {
+	hideTooltip() : void {
 		if(this.element != null)
 			this.element.style.display = "none";
 	}
