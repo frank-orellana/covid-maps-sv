@@ -1,16 +1,29 @@
 import {obtenerJson} from './tools'
+import { Departamento, Municipio } from '@/model/geo';
 
 export const departamentos: any = {};
 
 
-export async function getDepartamentos(): Promise<[] | undefined>{
-		try {
-			const x: [] = await obtenerJson("/departamentos/codigo_pais/503");
-			return x;
-		} catch (e) {
-			console.error(e);
-			return undefined;
+export async function getDepartamentos(municipios: boolean = false, reload: boolean = false): Promise<Departamento[]> {
+	try {
+		const x: [] = await obtenerJson("/departamentos/codigo_pais/503/" + (municipios ? 'si' : ''), { method: 'get', cache: reload ? 'reload' : 'default' });
+		return x;
+	} catch (e) {
+		console.error(e);
+		return [];
+	}
+}
+
+export async function getMunicipios(departamentos? : Departamento[]): Promise<Map<number, Municipio>> {
+	if(!departamentos) departamentos = await getDepartamentos();
+	const munis = new Map<number, Municipio>();
+	for (let d of departamentos) {
+		for (let m of d.municipios) {
+			m.departamento = d;
+			munis.set(m.id, m);
 		}
+	}
+	return munis;
 }
 
 departamentos["ahuachapan"] = {nombre: "Ahuachapan"};

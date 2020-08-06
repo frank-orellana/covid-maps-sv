@@ -192,15 +192,16 @@ import { obtenerJson, sleep, eventsHandler, Player } from "../tools/tools";
 import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO, colorProporcional, tipo_esc, tipo_med, coloresEscala } from "../tools/map_tools"
 import { Departamento, Municipio, CasosDiarios } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
+import { getDepartamentos, getMunicipios } from '../tools/municipios';
 
 
 
 @Component
 export default class Mapa extends Vue {
   @Prop() private msg!: string;
-  maxVal = 0;
-  total = 0;
-  ultimo = "";
+  maxVal : number = 0;
+  total  : number = 0;
+  ultimo : string = "";
   tablaMunicipios: CasosDiarios[] = [];
   maxTabMunis = 15;
   tablaMunicipiosDia: CasosDiarios[] = [];
@@ -359,7 +360,7 @@ export default class Mapa extends Vue {
   }
 
   @Watch('fechaSelIdx')
-  async fechaSelIdxChanged(){
+  async fechaSelIdxChanged() : Promise<void> {
     const fecString = this.fechasCasos[this.fechaSelIdx];
 
     this.casos_diarios = await this.obtenerCasosDiarios(fecString);
@@ -369,7 +370,7 @@ export default class Mapa extends Vue {
     this.actualizarTablas();
   }
 
-  actualizarTablas(){
+  actualizarTablas() : void{
     requestAnimationFrame(() => {
       this.tablaMunicipiosDia = this.casos_diarios.filter(v => v.casos_diarios > 0);
 
@@ -380,7 +381,7 @@ export default class Mapa extends Vue {
     });
   }
 
-  async prefetchCasos(waitFor: number = 0){
+  async prefetchCasos(waitFor: number = 0) : Promise<void> {
     const promesas: Array<Promise<CasosDiarios[]>> = []
     this.fechasCasos.forEach(fecString => {
       promesas.push(this.obtenerCasosDiarios(fecString));
@@ -390,7 +391,7 @@ export default class Mapa extends Vue {
       await Promise.all(promesas.slice(0,waitFor));
   }
 
-  async reproducir(){
+  async reproducir() : Promise<void> {
     if(this.player.playing) return this.player.stop();
     this.player.estadoRep = "Cargando...";
 
@@ -401,7 +402,7 @@ export default class Mapa extends Vue {
     this.player.play();
   }
 
-  async obtenerCasosDiarios(fecString: string, cache : "default" | "no-store" | "reload" | "no-cache" | "force-cache" | "only-if-cached" = 'default'): Promise<CasosDiarios[]>{
+  async obtenerCasosDiarios(fecString: string, cache : RequestInit["cache"] = 'default'): Promise<CasosDiarios[]>{
     const casos = this.listaCasosDiariosFecha.get(fecString);
 
     if(casos != undefined) return casos;
@@ -419,7 +420,7 @@ export default class Mapa extends Vue {
     return casos2;
   }
 
-  resaltarMunicipio(muni: any, resaltar = true) {
+  resaltarMunicipio(muni: any, resaltar : boolean = true) : void {
     if (resaltar) {
       muni.originalFill = muni.elements[0].style.fill;
       colorearMunicipio(muni as Municipio,COLOR_RESALTADO);
@@ -428,7 +429,7 @@ export default class Mapa extends Vue {
     }
   }
 
-  mostrar() {
+  mostrar() : void {
     requestAnimationFrame(() => {
       this.municipios.forEach(muni => {
         muni.numCasos = 0;
@@ -463,7 +464,7 @@ export default class Mapa extends Vue {
     });
   }
 
-  configurarEventosMunicipio(muni: Municipio){
+  configurarEventosMunicipio(muni: Municipio) : void {
     for (let i = 0; i < muni.elements.length; i++){
       const e = muni.elements[i];
       e.addEventListener('mouseover', () => {
@@ -495,7 +496,7 @@ export default class Mapa extends Vue {
     }
   }
 
-  init() {
+  init() : any {
     console.log('init');
     if(this.departamentos.length == 0){
       console.log('departamentos no cargados, reintentando');
@@ -530,7 +531,7 @@ export default class Mapa extends Vue {
     });
   }
 
-  inicializarMaximos(){
+  inicializarMaximos() : void {
     const casos = this.listaCasosDiariosFecha.get(this.fechasCasos[this.maxIdxFechas]) || [];
     const r = casos.reduce((p,c) => {
       return {
@@ -554,21 +555,17 @@ export default class Mapa extends Vue {
     }
   }
 
-  mounted() {
+  mounted() : void {
     (async () => {
       try {
         this.fechasCasos = await obtenerJson("/fechas_casos");
 
         if(this.departamentos.length == 0) {
-          this.departamentos = await obtenerJson("/departamentos/codigo_pais/503/si",{method:'get',cache:'default'});
+          this.departamentos = await getDepartamentos(true);
           if(!this.departamentos[0].municipios[0].hasOwnProperty('area')){
-            this.departamentos = await obtenerJson("/departamentos/codigo_pais/503/si",{method:'get',cache:'reload'});
+            this.departamentos = await getDepartamentos(true,true);
           }
-          for(let d of this.departamentos)
-            for(let m of d.municipios){
-              m.departamento = d;
-              this.municipios.set(m.id,m);
-            }
+          this.municipios = await getMunicipios(this.departamentos);
           this.init();
         }
 
@@ -578,13 +575,11 @@ export default class Mapa extends Vue {
         this.inicializarMaximos();
         this.fechaSelIdx = this.maxIdxFechas;
 
-        this.prefetchCasos();
+        this.prefetchCasos().catch(err => console.error(err));
       } catch (e) {
         console.error(e);
       }
-    })();
-
-    
+    })().catch(err => console.error(err));
 
     window.addEventListener("load", () => {
       this.documentoListo = true;
