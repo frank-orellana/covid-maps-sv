@@ -7,6 +7,7 @@ export class tipo_med{
 	static casos = "0";
 	static casos_poblacion = "1"
 	static casos_km2 = "2"
+	static casos_15d = "3"
 };
 export class tipo_esc{
   static lineal = "0";

@@ -4,6 +4,7 @@ export interface CasosDiarios  {
   fecha: string;
   casos: number;
   casos_diarios: number;
+  casos_15d: number;
   municipio: Municipio;
 }
 
@@ -15,6 +16,8 @@ export interface Municipio {
   poblacion: number;
   elements: HTMLCollectionOf<SVGPathElement>;
   numCasos: number;
+  numCasosDia: number;
+  numCasos15d: number;
   numCasosX100000: number;
   numCasosXKm2: number;
   area: number;

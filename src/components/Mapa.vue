@@ -5,18 +5,27 @@
     <p style="font-size:small; font-weight: bold; text-align: left;position:absolute;top:3mm;left: 15mm;">
       BETA
     </p>
-    <p style="text-align: left;position:absolute;top:75mm;left: 2mm;" class="label">
+    <div style="text-align: left;position:absolute;top:75mm;left: 2mm;" class="label">
       Fecha: <input id="fechaSel" type="date"
        :value="fechasCasos[fechaSelIdx]" @input="actualizarFecha($event)"
        :min="fechasCasos[0]" :max="fechasCasos[maxIdxFechas]">
-    </p>
-    <p id="playerControls" style="position:absolute;top:80mm;left: 2mm;">
+    </div>
+    <div style="text-align: left;position:absolute;top:80mm;left: 2mm;" class="label">
+      Vista: <select v-model="vista" id="vista" class="label-small">
+        <option value=""></option>
+        <option value="0">Casos Totales</option>
+        <option value="3">Casos Activos Aprox. (Casos ult. 15 días)</option>
+        <option value="1">Casos x Población</option>
+        <option value="2">Casos x Km2</option>
+      </select>
+    </div>
+    <div id="playerControls" style="position:absolute;top:85mm;left: 2mm;">
       <img @click="reproducir"  v-if="!player.playing" src="img/play.png" class="player_button" />&nbsp;
       <img  @click="player.play()" v-if="player.paused && player.playing" src="img/play.png" class="player_button" />&nbsp;
       <img  @click="player.pause()" v-if="!player.paused && player.playing" src="img/pause.png" class="player_button" />&nbsp;
       <img  @click="player.stop()"  v-if="player.playing" src="img/stop.png" class="player_button" />&nbsp;
       <span class="label">{{player.estadoRep}}</span>
-    </p>
+    </div>
 
     <div id="settings" style="position:absolute; top:5mm; text-align: right; right: 10px; margin-left:auto; margin-right:0mm;">
       <a>
@@ -31,10 +40,11 @@
             <label for="selectTipoMed">Color por:</label>
           </td>
           <td>
-            <select v-model="tipoMedicion" id="selectTipoMed" class="label-small" @input="showSettings = false">
+            <select v-model="tipoMedicion" id="selectTipoMed" class="label-small" @input="showSettings = false; vista = undefined;">
               <option value="0">Casos</option>
               <option value="1">Casos x Población</option>
               <option value="2">Casos x Km2</option>
+              <option value="3">Casos de últimos 15 días</option>
             </select>
           </td>
         </tr>
@@ -118,37 +128,63 @@
     </table>
     <div class="grid-tablas">
       <div>
-        <table id="CasosTotales" class="tablaMunicipios"><tr>
-            <th colspan="4">Top Casos acumulados al ({{fechaSelFormateada}})</th>
+        <table id="CasosTotales" class="tablaMunicipios">
+          <tr>
+            <th colspan="7">Detalle de casos por municipios al ({{fechaSelFormateada}})</th>
           </tr>
           <tr>
-            <th style="width:30%">Departamento</th>
-            <th>Municipio</th>
-            <th style="text-align:middle; width:10%;">Casos</th>
-            <th style="text-align:middle; width:10%;font-size:x-small;">Casos x<br/>100000 hab.</th>
-            <th style="text-align:middle; width:15%;font-size:x-small;">Casos x<br/>Km2</th>
+            <th style="width:1%" rowspan="2">No.</th>
+            <th style="width:60%" rowspan="2">Municipio</th>
+            <th style="text-align:center; width:10%;" colspan="5">Casos</th>
+          </tr>
+          <tr style="font-weight:normal;">
+            <th style="width:10%;">
+              <a @click="actualizarTablas(0);">Total</a>
+              <div v-if="orderTabla == 0" style="font-size:xx-small;">{{(ordenTablaAscDesc == 1)?'▼':'▲'}}</div>
+            </th>
+            <th style="width:10%;">
+              <a @click="actualizarTablas(1);">Día</a>
+              <div v-if="orderTabla == 1" style="font-size:xx-small;">{{(ordenTablaAscDesc == 1)?'▼':'▲'}}</div>
+            </th>
+            <th style="width:10%;font-size:x-small;">
+              <a @click="actualizarTablas(2);">Ultimos 15 días</a>
+              <div v-if="orderTabla == 2" style="font-size:xx-small;">{{(ordenTablaAscDesc == 1)?'▼':'▲'}}</div>
+            </th>
+            <th style="width:10%;font-size:x-small;">
+              <a @click="actualizarTablas(3);">x<br/>100K hab.</a>
+              <div v-if="orderTabla == 3" style="font-size:xx-small;">{{(ordenTablaAscDesc == 1)?'▼':'▲'}}</div>
+            </th>
+            <th style="width:10%;font-size:x-small;">
+              <a @click="actualizarTablas(4);">x<br/>Km2</a>
+              <div v-if="orderTabla == 4" style="font-size:xx-small;">{{(ordenTablaAscDesc == 1)?'▼':'▲'}}</div>
+            </th>
           </tr>
           <tr
-            v-for="x in tablaMunicipios"
+            v-for="(x,i) in tablaMunicipios"
             v-bind:key="x.municipio.id"
             @mouseover="resaltarMunicipio(x.municipio)"
             @mouseout="resaltarMunicipio(x.municipio,false)"
           >
-            <td style="text-align:left;">{{x.municipio.departamento.nombre}}</td>
-            <td style="text-align:left;">{{x.municipio.nombre}}</td>
-            <td>{{x.casos}}</td>
-            <td>{{x.municipio.numCasosX100000}}</td>
-            <td>{{x.municipio.numCasosXKm2.toFixed(2)}}</td>
+            <td style="width:1%">{{i + 1}}</td>
+            <td style="text-align:left;"><b>{{x.municipio.nombre}}</b>, <span style="font-size:x-small;">{{x.municipio.departamento.nombre}}</span></td>
+            <td style="text-align:right;">{{x.casos}}</td>
+            <td style="text-align:right;">{{x.casos_diarios}}</td>
+            <td style="text-align:right;">{{x.casos_15d}}</td>
+            <td style="text-align:right;">{{x.municipio.numCasosX100000}}</td>
+            <td style="text-align:right;">{{x.municipio.numCasosXKm2.toFixed(2)}}</td>
           </tr>
           <tr>
-            <td colspan="2">Total Top {{maxTabMunis}} municipios:</td>
+            <td colspan="2">Total <!--Top {{maxTabMunis}} -->casos municipios:</td>
             <td style="font-weight:bold;">{{tablaMunicipios.reduce((p,c) => c.casos + p,0)}}</td>
+            <td>{{tablaMunicipios.reduce((p,c) => c.casos_diarios + p,0)}}</td>
+            <td>{{tablaMunicipios.reduce((p,c) => c.casos_15d + p,0)}}</td>
+            <td>&nbsp;</td>
             <td>&nbsp;</td>
           </tr>
         </table>
-        <div>Estos municipios representan el: {{Math.round((tablaMunicipios.reduce((p,c) => c.casos + p, 0) /total) * 10000)/100}}% de los casos del país.</div>
+        <!--div>Estos municipios representan el: {{Math.round((tablaMunicipios.reduce((p,c) => c.casos + p, 0) /total) * 10000)/100}}% de los casos del país.</div-->
       </div>
-      <div>
+      <!--div>
         <table id="CasosDiarios" class="tablaMunicipios">
           <tr>
             <th colspan="3">Casos diarios ({{fechaSelFormateada}}):</th>
@@ -174,13 +210,18 @@
             <td>&nbsp;</td>
           </tr>
         </table>
-      </div>
+      </div-->
     </div>
     
     <div id="tooltip" display="none" style="position: absolute; display: none;">
       <b>{{muniTooltip.nombre}}: {{muniTooltip.numCasos}}</b><br>
-      Casos x 100K hab: {{muniTooltip.numCasosX100000}}<br>
-      Casos x Km2: {{muniTooltip.numCasosXKm2}}
+      <table>
+        <tr><td style="text-align:left;">Casos diarios:      </td><td style="text-align:right;">{{muniTooltip.numCasosDia}}</td></tr>
+        <tr><td style="text-align:left;">Casos ult. 15 días: </td><td style="text-align:right;">{{muniTooltip.numCasos15d}}</td></tr>
+        <tr><td style="text-align:left;">Casos x 100K hab:   </td><td style="text-align:right;">{{muniTooltip.numCasosX100000}}</td></tr>
+        <tr><td style="text-align:left;">Casos x Km2:        </td><td style="text-align:right;">{{muniTooltip.numCasosXKm2}}</td></tr>
+      </table>
+      A la fecha {{fechaSelFormateada}}
     </div>
   </div>
 </template>
@@ -203,7 +244,9 @@ export default class Mapa extends Vue {
   total  : number = 0;
   ultimo : string = "";
   tablaMunicipios: CasosDiarios[] = [];
-  maxTabMunis = 15;
+  orderTabla = 0;
+  ordenTablaAscDesc = 1;
+  maxTabMunis = 300;
   tablaMunicipiosDia: CasosDiarios[] = [];
   elsalvador = "";
   departamentos: Departamento[] = [];
@@ -219,6 +262,7 @@ export default class Mapa extends Vue {
 
   tipoEscala:tipo_esc = tipo_esc.trigonometrica;
   
+  vista = '0';
   tipoMedicion:tipo_med = tipo_med.casos;
   colorBase = COLOR_DEFAULT;
   colorEscala = coloresEscala.red;
@@ -322,6 +366,35 @@ export default class Mapa extends Vue {
     this.inicializarMaximos();
     this.mostrar();
   }
+  @Watch('vista')
+  watchVista(){
+    switch(this.vista){
+      case '0': //Casos totales
+        this.tipoEscala = tipo_esc.trigonometrica;
+        this.colorEscala = coloresEscala.red;
+        this.colorBase   = COLOR_DEFAULT;
+        this.tipoMedicion= tipo_med.casos;
+        break;
+      case '1': //Casos x población
+        this.tipoEscala = tipo_esc.lineal;
+        this.colorEscala = coloresEscala.blue;
+        this.colorBase   = 'white';
+        this.tipoMedicion= tipo_med.casos_poblacion;
+        break;
+      case '2': //Casos x km2
+        this.tipoEscala = tipo_esc.trigonometrica;
+        this.colorEscala = coloresEscala.red;
+        this.colorBase   = 'white';
+        this.tipoMedicion= tipo_med.casos_km2;
+        break;
+      case '3': //Casos 15d
+        this.tipoEscala = tipo_esc.trigonometrica;
+        this.colorEscala = coloresEscala.red;
+        this.colorBase   = COLOR_DEFAULT;
+        this.tipoMedicion= tipo_med.casos_15d;
+        break;
+    }
+  }
 
   async zoomInMuni(){
     console.log(this.zoomedInMuni);
@@ -370,14 +443,33 @@ export default class Mapa extends Vue {
     this.actualizarTablas();
   }
 
-  actualizarTablas() : void{
+  actualizarTablas(sort? : number | undefined) : void{
     requestAnimationFrame(() => {
       this.tablaMunicipiosDia = this.casos_diarios.filter(v => v.casos_diarios > 0);
+      let ascDesc = this.ordenTablaAscDesc;
+      if(sort != undefined){
+        ascDesc = (sort != null && sort == this.orderTabla)? -1 * this.ordenTablaAscDesc: 1;
+        this.orderTabla = sort || 0;
+        this.ordenTablaAscDesc = ascDesc;
+      } else {
+        sort = this.orderTabla;
+      }
 
       this.tablaMunicipios = this.casos_diarios
         .filter(v => v.casos > 0)
-        .sort((a, b) => b.casos - a.casos)
-        .slice(0,this.maxTabMunis);
+        .sort((a, b) => {
+          const def = (b.casos - a.casos) || (b.casos_diarios - a.casos_diarios) || (b.casos_15d - a.casos_15d) 
+            || (b.municipio.numCasosX100000 - a.municipio.numCasosX100000);
+          switch(sort){
+            case 0: return ascDesc * ((b.casos - a.casos) || def); 
+            case 1: return ascDesc * ((b.casos_diarios - a.casos_diarios) || def);
+            case 2: return ascDesc * ((b.casos_15d - a.casos_15d) || def); 
+            case 3: return ascDesc * ((b.municipio.numCasosX100000 - a.municipio.numCasosX100000) || def); 
+            case 4: return ascDesc * ((b.municipio.numCasosXKm2 - a.municipio.numCasosXKm2) || def); 
+            default: return ascDesc *((b.casos - a.casos) || def);
+          }
+        })
+        .slice(0,this.maxTabMunis); 
     });
   }
 
@@ -414,6 +506,7 @@ export default class Mapa extends Vue {
       fecha: c.fecha,
       casos: c.casos,
       casos_diarios: c.casos_diarios,
+      casos_15d: c.casos_15d,
       municipio: this.municipios.get(c.id_municipio) as Municipio
     }));
     this.listaCasosDiariosFecha.set(fecString,casos2);
@@ -441,6 +534,8 @@ export default class Mapa extends Vue {
         const muni = c.municipio;
         if(muni != undefined){
           muni.numCasos = c.casos;
+          muni.numCasosDia = c.casos_diarios;
+          muni.numCasos15d = c.casos_15d
           muni.numCasosX100000 = Math.round((c.casos * 100000 / muni.poblacion) * 10) / 10;
           muni.numCasosXKm2 = parseFloat((c.casos / muni.area).toFixed(3));
 
@@ -455,8 +550,14 @@ export default class Mapa extends Vue {
             case tipo_med.casos_km2:
               proporcional = colorProporcional(muni.numCasosXKm2 * 100,this.maxVal * 100,1,100,this.tipoEscala);
               break;
+            case tipo_med.casos_15d:
+              proporcional = colorProporcional(muni.numCasos15d,this.maxVal,1,100,this.tipoEscala)
+              break;
           }
-          colorearMunicipio(muni,`hsl(${this.colorEscala.hue}, 100%, ${(100 - proporcional)}%)`);
+          if (this.tipoMedicion != tipo_med.casos_15d || muni.numCasos15d > 0)
+            colorearMunicipio(muni,`hsl(${this.colorEscala.hue}, 100%, ${(100 - proporcional)}%)`);
+          else
+            colorearMunicipio(muni, this.colorBase);
         }else{
           console.error('municipio',c.municipio.id, 'no encontrado');
         }
@@ -538,9 +639,10 @@ export default class Mapa extends Vue {
         tot:p.tot + c.casos, 
         max:Math.max(p.max,c.casos),
         max_casos_pob:Math.max(p.max_casos_pob,c.casos*100000/c.municipio.poblacion),
-        max_casos_km2:Math.max(p.max_casos_km2,c.casos/c.municipio.area)
+        max_casos_km2:Math.max(p.max_casos_km2,c.casos/c.municipio.area),
+        max_casos_15d:Math.max(p.max_casos_15d,c.casos_15d)
       }
-    }, {tot:0,max:0,max_casos_pob:0,max_casos_km2:0});
+    }, {tot:0,max:0,max_casos_pob:0,max_casos_km2:0,max_casos_15d:0});
     this.total = r.tot;
     switch(this.tipoMedicion){
       case tipo_med.casos:
@@ -551,6 +653,9 @@ export default class Mapa extends Vue {
         break;
       case tipo_med.casos_km2:
         this.maxVal = parseFloat(r.max_casos_km2.toFixed(1));
+        break;
+      case tipo_med.casos_15d:
+        this.maxVal = r.max_casos_15d;
         break;
     }
   }
@@ -637,18 +742,25 @@ export default class Mapa extends Vue {
 }
 
 .tablaMunicipios {
-  font-size: medium;
+  font-size: small;
   background-color: lightsteelblue;
   margin-right: auto;
   margin-left: auto;
   border: darkgray;
   border-collapse: collapse;
   border: 1px solid white;
+  max-width: 600px;
 }
-.tablaMunicipios td th {
-  border: 1px solid white;
+.tablaMunicipios  td {
+  border: 1px solid lightgray;
   text-align: left;
   width: 90%;
+}
+
+.tablaMunicipios  th {
+  border: 1px solid lightgray;
+  text-align: center;
+  position: sticky;
 }
 
 h3 {
@@ -699,7 +811,7 @@ h3 {
 }
 .grid-tablas{
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: auto;
   column-gap: 10px;
   margin: 2mm;
 }
