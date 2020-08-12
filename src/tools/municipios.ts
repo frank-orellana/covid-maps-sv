@@ -15,7 +15,7 @@ export async function getDepartamentos(municipios: boolean = false, reload: bool
 }
 
 export async function getMunicipios(departamentos? : Departamento[]): Promise<Map<number, Municipio>> {
-	if(!departamentos) departamentos = await getDepartamentos();
+	if(!departamentos) departamentos = await getDepartamentos(true);
 	const munis = new Map<number, Municipio>();
 	for (let d of departamentos) {
 		for (let m of d.municipios) {

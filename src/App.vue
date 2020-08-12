@@ -1,9 +1,10 @@
 <template>
   <div id="app">
-    <!-- div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div-->
+    <div id="nav">
+      <router-link to="/">Mapa</router-link> |
+      <router-link to="/graficos">Gráficos</router-link><!-- |
+      <router-link to="/about">About</router-link-->
+    </div>
     <router-view/>
   </div>
 </template>
@@ -22,7 +23,10 @@ body {
 }
 
 #nav {
-  padding: 30px;
+  padding: 5px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%)
 }
 
 #nav a {
