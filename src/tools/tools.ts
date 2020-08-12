@@ -1,8 +1,20 @@
 import config from "./config";
 import Hammer from 'hammerjs';
 
-export async function obtenerJson(url: string, params: RequestInit = {method: "post",mode:"cors"}): Promise<any>{
-	//console.log("fetching", config.api_url + url, params);
+export async function obtenerJson(url: string, params: RequestInit = { method: "post", mode: "cors" }): Promise<any> {
+	return new Promise((resolve, reject) => {
+		fetch(config.api_url + url, params)
+			.then(resp => {
+				if (resp.status == 200) {
+					resp.json()
+						.then(json => resolve(json))
+						.catch(reason => reject({ error: reason }));
+				} else {
+					return { error: resp.status }
+				}
+			})
+			.catch(reason => reject({ error: reason }))
+	});
 	const resp = await fetch(config.api_url + url, params);
 	if(resp.status == 200){
 		const json = await resp.json();
@@ -28,6 +40,12 @@ export function cleanUpSpecialChars(str: string) : string {
 export async function sleep(ms:number) : Promise<unknown> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+export class tipo_casos_diarios{
+	static acumulados = "0";
+	static diarios = "1"
+	static activos = "2"
+};
 
 
 export class Player {
