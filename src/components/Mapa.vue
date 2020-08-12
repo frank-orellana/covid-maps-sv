@@ -6,15 +6,15 @@
       BETA
     </p>
     <div style="text-align: left;position:absolute;top:75mm;left: 2mm;" class="label">
-      Fecha: <input id="fechaSel" type="date"
+      Fecha: <div @click="cambiarFecha(-1)" class="date-arrows"> ◄ </div> <input id="fechaSel" type="date"
        :value="fechasCasos[fechaSelIdx]" @input="actualizarFecha($event)"
-       :min="fechasCasos[0]" :max="fechasCasos[maxIdxFechas]">
+       :min="fechasCasos[0]" :max="fechasCasos[maxIdxFechas]"> <div @click="cambiarFecha(1)" class="date-arrows">  ► </div>
     </div>
     <div style="text-align: left;position:absolute;top:80mm;left: 2mm;" class="label">
-      Vista: <select v-model="vista" id="vista" class="label-small">
+      Vista: <select v-model="vista" id="vista" class="label">
         <option value=""></option>
-        <option value="0">Casos Totales</option>
-        <option value="3">Casos Activos Aprox. (Casos ult. 15 días)</option>
+        <option value="0">Casos Totales Acumulados</option>
+        <option value="3">Casos Activos Aprox. (Ult. 15 días)</option>
         <option value="1">Casos x Población</option>
         <option value="2">Casos x Km2</option>
       </select>
@@ -98,7 +98,7 @@
       <tr>
         <td class="label-small">{{formatFechaJSON(fechasCasos[0])}}</td>
         <td style="width:90%">
-          <input type="range" min="0" :max="maxIdxFechas" value="0" style="width:100%" :title="fechaSelFormateada" id="myRange" v-model="fechaSelIdx"> 
+          <input type="range" min="0" :max="maxIdxFechas" value="0" style="width:100%" :title="fechaSelFormateada" id="myRange" v-model.number="fechaSelIdx"> 
         </td>
         <td class="label-small">{{formatFechaJSON(fechasCasos[maxIdxFechas])}}</td>
       </tr>
@@ -130,7 +130,7 @@
       <div>
         <table id="CasosTotales" class="tablaMunicipios">
           <tr>
-            <th colspan="7">Detalle de casos por municipios al ({{fechaSelFormateada}})</th>
+            <th colspan="7">Detalle de casos por municipios al {{fechaSelFormateada}}</th>
           </tr>
           <tr>
             <th style="width:1%" rowspan="2">No.</th>
@@ -279,8 +279,13 @@ export default class Mapa extends Vue {
       return this.maxVal * pos;
   }
 
-  cambiarFecha() {
-    this.fechaSelIdx = this.player.idx;
+  cambiarFecha(step?:number) {
+    if(step){
+      const newIdx : number = this.fechaSelIdx + step;
+      if(newIdx < 0 || newIdx > this.maxIdxFechas) return;
+      this.fechaSelIdx = newIdx;
+    }else
+      this.fechaSelIdx = this.player.idx;
   }
   toggleColorBase() {
     if(this.colorBase == COLOR_DEFAULT)
@@ -688,8 +693,20 @@ export default class Mapa extends Vue {
 
     window.addEventListener("load", () => {
       this.documentoListo = true;
-      
     });
+
+    document.body.addEventListener("keydown", (e) => {
+      if(e.keyCode == 37) this.cambiarFecha(-1);
+      if(e.keyCode == 39) this.cambiarFecha(1);
+      if(e.keyCode == 35 && e.ctrlKey == false) {
+        this.fechaSelIdx = this.maxIdxFechas;
+        return false;
+      }
+      if(e.keyCode == 36 && e.ctrlKey == false) {
+        this.fechaSelIdx = 0;
+        return false;
+      }
+    })
   }
 }
 </script>
@@ -831,5 +848,15 @@ h3 {
 }
 #settingsDialog {
   text-align:left;
+}
+
+.date-arrows {
+  cursor: pointer;
+  display: inline;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.date-arrows:hover{
+  box-shadow: 0 4px 8px;
 }
 </style>
