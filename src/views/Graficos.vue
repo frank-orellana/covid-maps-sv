@@ -17,7 +17,6 @@ import Component from 'vue-class-component'
 import Footer from '@/components/Footer.vue'
 import GraficoResumenDiario from '@/components/GraficoResumenDiario.vue'
 import GraficoCasosDiarios from '@/components/GraficoCasosDiarios.vue'
-import GraficoCasosActivos from '@/components/GraficoCasosActivos.vue'
 import { obtenerJson, sleep } from '../tools/tools';
 import { CasosDiarios } from '@/model/geo';
 import { obtenerCasosDiarios } from '@/tools/graphs_tools';
@@ -29,7 +28,7 @@ const commonStore = {
 
 @Component({
 	name: 'Gráficos',
-	components: {Footer, GraficoResumenDiario, GraficoCasosDiarios, GraficoCasosActivos}
+	components: {Footer, GraficoResumenDiario, GraficoCasosDiarios}
 })
 export default class Graficos extends Vue {
 	store = commonStore;
