@@ -1,9 +1,9 @@
 <template>
   <div class="home">
   	<div class="grid-graficos">
-			<GraficoCasosDiarios :store="store" tipoCasos='0'/>
-			<GraficoCasosDiarios :store="store" tipoCasos='2' mostrarPromedioChk="true"/>
-			<GraficoCasosDiarios :store="store" tipoCasos='1' mostrarPromedioVar="true" mostrarPromedioChk="true"/>
+			<GraficoCasosDiarios tipoCasos='0'/>
+			<GraficoCasosDiarios tipoCasos='2' mostrarPromedioChk="true"/>
+			<GraficoCasosDiarios tipoCasos='1' mostrarPromedioVar="true" mostrarPromedioChk="true"/>
 			<GraficoResumenDiario/>
   	</div>
 		<Footer />
@@ -19,37 +19,30 @@ import GraficoResumenDiario from '@/components/GraficoResumenDiario.vue'
 import GraficoCasosDiarios from '@/components/GraficoCasosDiarios.vue'
 import { obtenerJson, sleep } from '../tools/tools';
 import { CasosDiarios } from '@/model/geo';
-import { obtenerCasosDiarios } from '@/tools/graphs_tools';
-
-const commonStore = { 
-	fechasCasos : [] as Array<string>,
-	casosDiarios : [] as Array<CasosDiarios>
-}
+import store from '@/tools/store'
 
 @Component({
 	name: 'Gráficos',
 	components: {Footer, GraficoResumenDiario, GraficoCasosDiarios}
 })
 export default class Graficos extends Vue {
-	store = commonStore;
+	store = store;
 	
 	async init(){
-		const fechasCasos = await obtenerJson("/fechas_casos");
-		const casosDiarios = await obtenerCasosDiarios(fechasCasos[fechasCasos.length - 1],'reload');
-		casosDiarios.sort((a,b) => a.casos > b.casos ? -1 : 1);
+		const fechasCasos = await store.getFechasCasos();
+		const casosDiarios = await store.obtenerCasosDiarios(fechasCasos[fechasCasos.length - 1],'reload');
 
 		const histCasosMuni =  [];
 		const params = {method:'get', mode: 'cors', cache: 'reload'} as RequestInit;
 		for(let i = 0; i < 8; i++){
-			histCasosMuni.push(obtenerJson('/hist_casos/'+ casosDiarios[i].id_municipio, params));
+			histCasosMuni.push(store.getHistCasosDiariosMunicipio(casosDiarios[i].id_municipio));
 		}
 
 		await Promise.all(histCasosMuni);
-
-		this.store = {fechasCasos,casosDiarios};
+		console.log('prefetch completed...')
 	}
 
-	mounted(){
+	created(){
 		this.init().catch(err => console.log(err));
 	}
 }

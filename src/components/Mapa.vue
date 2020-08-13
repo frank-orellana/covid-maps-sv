@@ -229,11 +229,11 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { Tooltip } from "../tools/tooltip";
-import { obtenerJson, sleep, eventsHandler, Player } from "../tools/tools";
+import { sleep, eventsHandler, Player } from "../tools/tools";
 import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO, colorProporcional, tipo_esc, tipo_med, coloresEscala } from "../tools/map_tools"
 import { Departamento, Municipio, CasosDiarios } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
-import { getDepartamentos, getMunicipios } from '../tools/municipios';
+import store from '@/tools/store';
 
 
 
@@ -256,7 +256,6 @@ export default class Mapa extends Vue {
   fechaSelIdx = 0;
   mantenerMax = true;
   documentoListo = false;
-  listaCasosDiariosFecha: Map<string,CasosDiarios[]> = new Map();
 
   player = new Player(this.cambiarFecha, 200);
 
@@ -367,8 +366,8 @@ export default class Mapa extends Vue {
     this.mostrar();
   }
   @Watch('tipoMedicion')
-  toggleMed(){
-    this.inicializarMaximos();
+  async toggleMed(){
+    await this.inicializarMaximos();
     this.mostrar();
   }
   @Watch('vista')
@@ -441,7 +440,7 @@ export default class Mapa extends Vue {
   async fechaSelIdxChanged() : Promise<void> {
     const fecString = this.fechasCasos[this.fechaSelIdx];
 
-    this.casos_diarios = await this.obtenerCasosDiarios(fecString);
+    this.casos_diarios = await store.obtenerCasosDiarios(fecString);
     this.total = this.casos_diarios.reduce((p,c) => p + c.casos, 0);
     this.mostrar();
 
@@ -481,7 +480,7 @@ export default class Mapa extends Vue {
   async prefetchCasos(waitFor: number = 0) : Promise<void> {
     const promesas: Array<Promise<CasosDiarios[]>> = []
     this.fechasCasos.forEach(fecString => {
-      promesas.push(this.obtenerCasosDiarios(fecString));
+      promesas.push(store.obtenerCasosDiarios(fecString));
     });
 
     if(waitFor > 0)
@@ -499,27 +498,9 @@ export default class Mapa extends Vue {
     this.player.play();
   }
 
-  async obtenerCasosDiarios(fecString: string, cache : RequestInit["cache"] = 'default'): Promise<CasosDiarios[]>{
-    const casos = this.listaCasosDiariosFecha.get(fecString);
-
-    if(casos != undefined) return casos;
-    
-    let casos2: CasosDiarios[] = (await obtenerJson("/casos_diarios/"+ fecString,{method:'get', mode: "cors", cache: cache})) || [];
-    casos2 = casos2.map(c => ({
-      id: c.id,
-      id_municipio: c.id_municipio,
-      fecha: c.fecha,
-      casos: c.casos,
-      casos_diarios: c.casos_diarios,
-      casos_15d: c.casos_15d,
-      municipio: this.municipios.get(c.id_municipio) as Municipio
-    }));
-    this.listaCasosDiariosFecha.set(fecString,casos2);
-    return casos2;
-  }
-
   resaltarMunicipio(muni: any, resaltar : boolean = true) : void {
     if (resaltar) {
+      if(!muni.elements) console.error('no elements', muni);
       muni.originalFill = muni.elements[0].style.fill;
       colorearMunicipio(muni as Municipio,COLOR_RESALTADO);
     } else {
@@ -627,7 +608,7 @@ export default class Mapa extends Vue {
 
           colorearMunicipio(muni,this.colorBase);
           this.configurarEventosMunicipio(muni);
-        } else console.warn(dep.nombre, muni.nombre, "not found");
+        } else console.warn(dep.nombre, muni.nombre, "layer not found");
       }
     }
 
@@ -637,8 +618,8 @@ export default class Mapa extends Vue {
     });
   }
 
-  inicializarMaximos() : void {
-    const casos = this.listaCasosDiariosFecha.get(this.fechasCasos[this.maxIdxFechas]) || [];
+  async inicializarMaximos() : Promise<void> {
+    const casos = await store.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas]) || [];
     const r = casos.reduce((p,c) => {
       return {
         tot:p.tot + c.casos, 
@@ -668,21 +649,19 @@ export default class Mapa extends Vue {
   mounted() : void {
     (async () => {
       try {
-        this.fechasCasos = await obtenerJson("/fechas_casos");
+        this.fechasCasos = await store.getFechasCasos();
 
-        if(this.departamentos.length == 0) {
-          this.departamentos = await getDepartamentos(true);
-          if(!this.departamentos[0].municipios[0].hasOwnProperty('area')){
-            this.departamentos = await getDepartamentos(true,true);
-          }
-          this.municipios = await getMunicipios(this.departamentos);
-          this.init();
+        this.departamentos = await store.getDepartamentos();
+        if(!this.departamentos[0].municipios[0].hasOwnProperty('area')){
+          this.departamentos = await store.getDepartamentos(true);
         }
+        this.municipios = await store.getMunicipios();
+        this.init();
 
         this.tooltipMunicipio = new Tooltip('tooltip');
 
-        this.casos_diarios = await this.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas],'reload');
-        this.inicializarMaximos();
+        this.casos_diarios = await store.obtenerCasosDiarios(this.fechasCasos[this.maxIdxFechas],'reload');
+        await this.inicializarMaximos();
         this.fechaSelIdx = this.maxIdxFechas;
 
         this.prefetchCasos().catch(err => console.error(err));

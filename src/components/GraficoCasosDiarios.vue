@@ -15,7 +15,8 @@ import { obtenerJson, tipo_casos_diarios } from '../tools/tools';
 
 import Chart, {ChartData, ChartDataSets, ChartConfiguration, ChartOptions} from 'charts.vue2';
 import { CasosDiarios } from '../model/geo';
-import { fixFechas, MyDataset, obtenerCasosDiarios, movingAvg } from '../tools/graphs_tools'
+import { fixFechas, MyDataset, movingAvg } from '../tools/graphs_tools'
+import store from '@/tools/store'
 
 
 
@@ -25,10 +26,10 @@ import { fixFechas, MyDataset, obtenerCasosDiarios, movingAvg } from '../tools/g
 export default class GraficoCasosDiarios extends Vue {
   @Prop({default:'line'}) tipoGrafico! : string;
   fechasCasos : string[] = [];
-  @Prop() store: any;
   @Prop() tipoCasos!: tipo_casos_diarios;
   @Prop({default : false}) mostrarPromedioChk!: boolean;
   @Prop({default : false}) mostrarPromedioVar!: boolean;
+  store = store;
  
   labels = ['Cargando...'];
   dataset : ChartDataSets[] = [{
@@ -65,12 +66,16 @@ export default class GraficoCasosDiarios extends Vue {
   } 
 
   async init(){
-    this.fechasCasos = this.store.fechasCasos;
-    if(!this.fechasCasos || this.fechasCasos.length == 0) return;
+    this.fechasCasos = await store.getFechasCasos();
+    if(!this.fechasCasos || this.fechasCasos.length == 0) return console.log('Fechas casos vacía');
 
-    console.log('store',this.store);
+    let casos_diarios = await this.store.obtenerCasosDiarios(this.fechasCasos[this.fechasCasos.length - 1]) // .casosDiarios as CasosDiarios[]; // await obtenerCasosDiarios(this.fechasCasos[this.fechasCasos.length - 1],'reload');
 
-    const casos_diarios = this.store.casosDiarios as CasosDiarios[]; // await obtenerCasosDiarios(this.fechasCasos[this.fechasCasos.length - 1],'reload');
+    if(this.tipoCasos == tipo_casos_diarios.acumulados)
+      casos_diarios = casos_diarios.slice().sort((a,b) => a.casos > b.casos ? -1 : 1);
+    else
+      casos_diarios = casos_diarios.slice().sort((a,b) => a.casos_15d > b.casos_15d ? -1 : 1);
+
     if(casos_diarios.length == 0){
       console.warn('No se pudo obtener los casos diarios de la fecha', this.fechasCasos[this.fechasCasos.length - 1],this.fechasCasos.length - 1);
       return;
@@ -80,7 +85,7 @@ export default class GraficoCasosDiarios extends Vue {
 
     const ds = [];
     for(let i = 0; i < 8; i++){
-      let c = await obtenerJson('/hist_casos/'+ casos_diarios[i].id_municipio,{method:'get', mode: 'cors'}) as Array<CasosDiarios>;
+      let c = await store.getHistCasosDiariosMunicipio(casos_diarios[i].id_municipio); // await obtenerJson('/hist_casos/'+ casos_diarios[i].id_municipio,{method:'get', mode: 'cors'}) as Array<CasosDiarios>;
       let datos = c
         .sort((a,b) => a.fecha  < b.fecha ? -1 : 1)
         .map(v => {

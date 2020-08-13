@@ -4,7 +4,7 @@ import { Departamento, Municipio } from '@/model/geo';
 export const departamentos: any = {};
 
 
-export async function getDepartamentos(municipios: boolean = false, reload: boolean = false): Promise<Departamento[]> {
+export async function getDepartamentosServer(municipios: boolean = false, reload: boolean = false): Promise<Departamento[]> {
 	try {
 		const x: [] = await obtenerJson("/departamentos/codigo_pais/503/" + (municipios ? 'si' : ''), { method: 'get', cache: reload ? 'reload' : 'default' });
 		return x;
@@ -14,8 +14,8 @@ export async function getDepartamentos(municipios: boolean = false, reload: bool
 	}
 }
 
-export async function getMunicipios(departamentos? : Departamento[]): Promise<Map<number, Municipio>> {
-	if(!departamentos) departamentos = await getDepartamentos(true);
+export async function getMunicipiosServer(departamentos? : Departamento[]): Promise<Map<number, Municipio>> {
+	if(!departamentos) departamentos = await getDepartamentosServer(true);
 	const munis = new Map<number, Municipio>();
 	for (let d of departamentos) {
 		for (let m of d.municipios) {

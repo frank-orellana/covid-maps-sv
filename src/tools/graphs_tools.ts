@@ -1,20 +1,18 @@
-import Chart, {ChartData, ChartDataSets, ChartConfiguration, ChartOptions} from 'charts.vue2';
-import { CasosDiarios, Municipio } from '@/model/geo';
-import { obtenerJson } from './tools';
-import { getMunicipios } from './municipios';
+import {ChartDataSets} from 'charts.vue2';
 
 export class MyDataset implements ChartDataSets{
-  constructor(label:string,data:Array<number|null>,color:string){
+  constructor(label:string,data:Array<number|undefined|null>,color:string,type?:string){
     this.label=label;
     this.data=data;
     this.backgroundColor= color;
     this.pointBackgroundColor = color;
     this.pointBorderColor = color;
     this.borderColor = color;
+    this.type = type;
   }
 
   label = 'N/A';
-  data : Array<number|null>;
+  data : Array<number|undefined|null>;
   backgroundColor =  '#2c3e50';
   fill = false;
   borderWidth = 1;
@@ -23,33 +21,15 @@ export class MyDataset implements ChartDataSets{
   pointBorderColor = 'red';
   borderColor = 'red';
   pointBorderWidth = 0;
-  type! : string;
+  type! : string | undefined;
   hideInLegendAndTooltip!: boolean;
 }
 
-export async function obtenerCasosDiarios(fecString: string, cache : RequestInit["cache"] = 'default'): Promise<CasosDiarios[]>{
-  //const casos = this.listaCasosDiariosFecha.get(fecString);
-  //if(casos != undefined) return casos;
-  const municipios = await getMunicipios();
-
-  let casos2: CasosDiarios[] = (await obtenerJson("/casos_diarios/"+ fecString,{method:'get', mode: "cors", cache: cache})) || [];
-  casos2 = casos2.map(c => ({
-    id: c.id,
-    id_municipio: c.id_municipio,
-    fecha: c.fecha,
-    casos: c.casos,
-    casos_diarios: c.casos_diarios,
-    casos_15d: c.casos_15d,
-    municipio: municipios.get(c.id_municipio) as Municipio
-  }));
-  //this.listaCasosDiariosFecha.set(fecString,casos2);
-  return casos2;
-}
-
-export function fixFechas(datos:Array<number|undefined>, fechas:Array<string>){
+export function fixFechas(datos:Array<number|undefined|null>, fechas:Array<string>){
   while(datos.length < fechas.length){
     datos.unshift(undefined);
   }
+  return datos;
 }
 
 export function movingAvg(array: Array<number | null>, countBefore: number, countAfter: number) {

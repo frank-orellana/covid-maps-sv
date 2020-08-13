@@ -15,14 +15,6 @@ export async function obtenerJson(url: string, params: RequestInit = { method: "
 			})
 			.catch(reason => reject({ error: reason }))
 	});
-	const resp = await fetch(config.api_url + url, params);
-	if(resp.status == 200){
-		const json = await resp.json();
-		//console.log('response:', json);
-		return json;
-	}else{
-		return {error: resp.status}
-	}
 }
 
 export function cleanUpSpecialChars(str: string) : string {
