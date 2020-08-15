@@ -15,7 +15,7 @@ export class MyDataset implements ChartDataSets{
   data : Array<number|undefined|null>;
   backgroundColor =  '#2c3e50';
   fill = false;
-  borderWidth = 1;
+  borderWidth = 1.25;
   pointRadius = 0.25;
   pointBackgroundColor = 'red';
   pointBorderColor = 'red';

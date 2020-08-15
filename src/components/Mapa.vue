@@ -166,7 +166,7 @@
             @mouseout="resaltarMunicipio(x.municipio,false)"
           >
             <td style="width:1%">{{i + 1}}</td>
-            <td style="text-align:left;"><b>{{x.municipio.nombre}}</b>, <span style="font-size:x-small;">{{x.municipio.departamento.nombre}}</span></td>
+            <td style="text-align:left;"><router-link :to="'/graficos_muni/'+ x.municipio.id"><b>{{x.municipio.nombre}}</b></router-link>, <span style="font-size:x-small;">{{x.municipio.departamento.nombre}}</span></td>
             <td style="text-align:right;">{{x.casos}}</td>
             <td style="text-align:right;">{{x.casos_diarios}}</td>
             <td style="text-align:right;">{{x.casos_15d}}</td>
