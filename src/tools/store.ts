@@ -8,6 +8,7 @@ class Store {
 	private _fechasCasos!: Array<string>;
 	private _listaCasosDiariosFecha: Map<string,CasosDiarios[] | Promise<CasosDiarios[]>> = new Map();
 	private _histCasosDiariosMunis = new Map<number, CasosDiarios[] | Promise<CasosDiarios[]>>();
+	private _muertes!: Array<any> | Promise<Array<any>>;
 
 	dummy = 0;
 
@@ -109,6 +110,22 @@ class Store {
 				.catch(reason => reject(reason))
 		});
 		this._histCasosDiariosMunis.set(idMunicipio,p);
+		return p;
+	}
+
+	async getMuertes() : Promise<Array<any>>{
+		let m = this._muertes;
+		if(m != undefined) return m;
+
+		const p : Promise<Array<any>> = new Promise((resolve,reject) => {
+			obtenerJson('/muertes', {method: 'get', mode: 'cors'})
+			.then(muertes => {
+				this._muertes = muertes;
+				resolve(muertes);
+			})
+			.catch(reason => reject(reason));
+		})
+		m = p;
 		return p;
 	}
 }

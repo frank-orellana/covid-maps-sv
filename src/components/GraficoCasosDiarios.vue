@@ -1,6 +1,6 @@
 <template>
 	<div>
-    <chart :type="tipoGrafico" :labels="labels" :datasets="dataset" :options="options" />
+    <chart :type="tipoGrafico" :labels="labels" :datasets="dataset" :options="options" height="550px" />
     <div v-if="mostrarPromedioChk">
       <!--tipo de gráfico <input type="radio" value="bar" v-model="tipoGrafico">barras <input type="radio" value="line" v-model="tipoGrafico"> linea-->
       <input type="checkbox" v-model="mostrarPromedioVar"> Promedio móvil 7 días 
@@ -71,9 +71,12 @@ export default class GraficoCasosDiarios extends Vue {
 
     let casos_diarios = await this.store.obtenerCasosDiarios(this.fechasCasos[this.fechasCasos.length - 1]) // .casosDiarios as CasosDiarios[]; // await obtenerCasosDiarios(this.fechasCasos[this.fechasCasos.length - 1],'reload');
 
-    if(this.tipoCasos == tipo_casos_diarios.acumulados)
+    let numMostrar = 8;
+    if(window.innerWidth > 600) numMostrar = 12;
+
+    if(this.tipoCasos == tipo_casos_diarios.acumulados){
       casos_diarios = casos_diarios.slice().sort((a,b) => a.casos > b.casos ? -1 : 1);
-    else
+    }else
       casos_diarios = casos_diarios.slice().sort((a,b) => a.casos_15d > b.casos_15d ? -1 : 1);
 
     if(casos_diarios.length == 0){
@@ -81,10 +84,10 @@ export default class GraficoCasosDiarios extends Vue {
       return;
     }
 
-    const colores = ['red','yellow','orange','blue','cyan','green', 'pink','silver','fucsia']
+    const colores = ['red','yellow','orange','blue','cyan','green', 'pink','silver','fucsia','BlueViolet','Chartreuse','DeepPink','DarkGreen']
 
     const ds = [];
-    for(let i = 0; i < 8; i++){
+    for(let i = 0; i < numMostrar; i++){
       let c = await store.getHistCasosDiariosMunicipio(casos_diarios[i].id_municipio); // await obtenerJson('/hist_casos/'+ casos_diarios[i].id_municipio,{method:'get', mode: 'cors'}) as Array<CasosDiarios>;
       let datos = c
         .sort((a,b) => a.fecha  < b.fecha ? -1 : 1)
