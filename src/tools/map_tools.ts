@@ -30,6 +30,7 @@ export function colorearMunicipio(muni: Municipio, color: string) : void {
 // tslint:disable-next-line: max-line-length
 export function colorProporcional(casos:number, maxVal: number, escalaMin: number, escalaMax: number, tipoEscala: tipo_esc) : number {
 	let proporcional: number;
+	casos = Math.min(casos, maxVal);
 
 	switch(tipoEscala){
 		case tipo_esc.logaritmica:

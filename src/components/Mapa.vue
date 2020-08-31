@@ -229,7 +229,7 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { Tooltip } from "../tools/tooltip";
-import { sleep, eventsHandler, Player } from "../tools/tools";
+import { sleep, eventsHandler, Player, constrain } from "../tools/tools";
 import { colorearMunicipio, COLOR_DEFAULT, COLOR_RESALTADO, colorProporcional, tipo_esc, tipo_med, coloresEscala } from "../tools/map_tools"
 import { Departamento, Municipio, CasosDiarios } from '../model/geo';
 import svgPanZoom from 'svg-pan-zoom';
@@ -541,7 +541,7 @@ export default class Mapa extends Vue {
               break;
           }
           if (this.tipoMedicion != tipo_med.casos_15d || muni.numCasos15d > 0)
-            colorearMunicipio(muni,`hsl(${this.colorEscala.hue}, 100%, ${(100 - proporcional)}%)`);
+            colorearMunicipio(muni,`hsl(${this.colorEscala.hue}, 100%, ${constrain(100 - proporcional,0,100)}%)`);
           else
             colorearMunicipio(muni, this.colorBase);
         }else{
