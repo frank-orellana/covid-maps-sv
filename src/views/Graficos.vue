@@ -4,8 +4,10 @@
 			<GraficoCasosDiarios style="grid-area:a" tipoCasos='0'/>
 			<GraficoCasosDiarios style="grid-area:b" tipoCasos='2' mostrarPromedioChk="true"/>
 			<GraficoCasosDiarios style="grid-area:c" tipoCasos='1' mostrarPromedioVar="true" mostrarPromedioChk="true"/>
-			<chart type="line" style="grid-area:d" :labels="deathLabels" :datasets="deathDS" :options="deathOptions" height="400px" />
-			<GraficoResumenDiario style="grid-area:e" />
+			<!--chart type="line" style="grid-area:d" :labels="deathLabels" :datasets="deathDS" :options="deathOptions" height="400px" /-->
+			<GraficoMuertes style="grid-area:d" />
+			<GraficoPruebas style="grid-area:e" />
+			<GraficoResumenDiario style="grid-area:f" />
   	</div>
 		<Footer />
   </div>
@@ -18,6 +20,8 @@ import Component from 'vue-class-component'
 import Footer from '@/components/Footer.vue'
 import GraficoResumenDiario from '@/components/GraficoResumenDiario.vue'
 import GraficoCasosDiarios from '@/components/GraficoCasosDiarios.vue'
+import GraficoMuertes from '@/components/GraficoMuertes.vue';
+import GraficoPruebas from '@/components/GraficoPruebas.vue';
 import { obtenerJson, sleep } from '../tools/tools';
 import { CasosDiarios } from '@/model/geo';
 import store from '@/tools/store'
@@ -26,7 +30,7 @@ import { MyDataset } from '@/tools/graphs_tools';
 
 @Component({
 	name: 'Gráficos',
-	components: {Footer, GraficoResumenDiario, GraficoCasosDiarios, Chart}
+	components: {Footer, GraficoResumenDiario, GraficoCasosDiarios, GraficoMuertes, GraficoPruebas, Chart}
 })
 export default class Graficos extends Vue {
 	store = store;
@@ -90,7 +94,8 @@ export default class Graficos extends Vue {
 	grid-template:
 		"a a" 550px
 		"b c"
-		"d e" /
+		"d e"
+		"f g" /
 		50% 50%;
 	padding-top: 50px;
 }
@@ -102,7 +107,8 @@ export default class Graficos extends Vue {
 		"b"
 		"c"
 		"d"
-		"e" /
+		"e"
+		"f"/
 		auto;
 	}
 }
