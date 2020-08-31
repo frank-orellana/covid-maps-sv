@@ -128,6 +128,22 @@ class Store {
 		m = p;
 		return p;
 	}
+
+	async getPruebas() : Promise<Array<any>>{
+		let m = this._muertes;
+		if(m != undefined) return m;
+
+		const p : Promise<Array<any>> = new Promise((resolve,reject) => {
+			obtenerJson('/pruebas', {method: 'get', mode: 'cors'})
+			.then(muertes => {
+				this._muertes = muertes;
+				resolve(muertes);
+			})
+			.catch(reason => reject(reason));
+		})
+		m = p;
+		return p;
+	}
 }
 
 const store = new Store();
