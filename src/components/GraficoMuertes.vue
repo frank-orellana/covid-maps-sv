@@ -25,7 +25,6 @@ import store from '@/tools/store'
 export default class GraficoCasosDiarios extends Vue {
   @Prop({default:'line'}) tipoGrafico! : string;
   fechasCasos : string[] = [];
-  @Prop() tipoCasos!: tipo_casos_diarios;
   @Prop({default : false}) mostrarPromedioChk!: boolean;
   @Prop({default : false}) mostrarPromedioVar!: boolean;
   store = store;
@@ -41,7 +40,8 @@ export default class GraficoCasosDiarios extends Vue {
     responsive: true,
     maintainAspectRatio: false,
     scales : {
-      yAxes : [{ticks:{min: 0}}]
+      yAxes : [{ticks:{min: 0}}],
+			xAxes : [{scaleLabel: {labelString : 'Fuente: https://ourworldindata.org/', display: true, fontSize : 10}}]
     },
     title: {text:'Cargando casos...',position:'top',display:true,fontSize:20},
     legend: {
@@ -73,7 +73,8 @@ export default class GraficoCasosDiarios extends Vue {
 		this.labels = muertes.map(x => x.date);
 
 		let ds1 = new MyDataset('Muertes totales acumuladas',muertes.map(x => x.total_deaths),'red');
-    ds1.borderWidth = 1.5;
+    ds1.borderWidth = 2;
+    ds1.pointRadius = 1;
     
     let ds2 = new MyDataset('Muertes diarias', muertes.map(x => x.new_deaths), 'darkblue')
     ds2.type = 'bar';

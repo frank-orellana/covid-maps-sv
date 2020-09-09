@@ -25,7 +25,6 @@ import store from '@/tools/store'
 export default class GraficoCasosDiarios extends Vue {
   @Prop({default:'line'}) tipoGrafico! : string;
   fechasCasos : string[] = [];
-  @Prop() tipoCasos!: tipo_casos_diarios;
   @Prop({default : false}) mostrarPromedioChk!: boolean;
   @Prop({default : false}) mostrarPromedioVar!: boolean;
   store = store;
@@ -41,7 +40,8 @@ export default class GraficoCasosDiarios extends Vue {
     responsive: true,
     maintainAspectRatio: false,
     scales : {
-      yAxes : [{ticks:{min: 0}}]
+      yAxes : [{ticks:{min: 0}}],
+			xAxes : [{scaleLabel: {labelString : 'Fuente: https://ourworldindata.org/', display: true, fontSize : 10}}]
     },
     title: {text:'Cargando casos...',position:'top',display:true,fontSize:20},
     legend: {
@@ -72,8 +72,9 @@ export default class GraficoCasosDiarios extends Vue {
 			this.options.title.text = 'Pruebas totales El Salvador'
 		this.labels = pruebas.map(x => x.date);
 
-		let ds1 = new MyDataset('Pruebas totales acumuladas',pruebas.map(x => x.total_tests),'red');
-    ds1.borderWidth = 1.5;
+		let ds1 = new MyDataset('Pruebas totales acumuladas',pruebas.map(x => x.total_tests),'darkgreen');
+    ds1.borderWidth = 2;
+    ds1.pointRadius = 1;
     
     let ds2 = new MyDataset('Pruebas diarias', pruebas.map(x => x.new_tests), 'darkblue')
     ds2.type = 'bar';
