@@ -25,7 +25,6 @@ import store from '@/tools/store'
 export default class GraficoCasosDiarios extends Vue {
   @Prop({default:'line'}) tipoGrafico! : string;
   fechasCasos : string[] = [];
-  @Prop() tipoCasos!: tipo_casos_diarios;
   @Prop({default : false}) mostrarPromedioChk!: boolean;
   @Prop({default : false}) mostrarPromedioVar!: boolean;
   store = store;
