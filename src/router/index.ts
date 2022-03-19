@@ -6,7 +6,7 @@ import GraficosMunicipio from '../views/GraficosMunicipio.vue';
 
 Vue.use(VueRouter)
 
-  const routes: Array<RouteConfig> = [
+const routes: Array<RouteConfig> = [
   {
     path: '/',
     name: 'Home',
@@ -15,7 +15,7 @@ Vue.use(VueRouter)
   {
     path: '/graficos',
     name: 'Gráficos',
-    //component: Graficos
+    //component: Gráficos
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
@@ -28,7 +28,7 @@ Vue.use(VueRouter)
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "graficos_muni" */ '../views/GraficosMunicipio.vue')
+    component: () => import('../views/GraficosMunicipio.vue')
   },
   {
     path: '/about',
@@ -36,7 +36,7 @@ Vue.use(VueRouter)
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
+    component: () => import('../views/About.vue')
   }
 ]
 

@@ -1,6 +1,6 @@
-console.log('config:',process.env.NODE_ENV);
+console.log('config:',import.meta.env.MODE);
 
 export default {
-	api_url : process.env.NODE_ENV === 'production'? 'https://intranet.tritium.cl:3000': `http://${location.hostname}:3000`,
+	api_url : import.meta.env.MODE === 'production'? 'https://intranet.tritium.cl:3000': `http://${location.hostname}:3000`,
 	app_name : 'tritium maps'
 }
