@@ -20,16 +20,16 @@
       </select>
     </div>
     <div id="playerControls" style="position:absolute;top:85mm;left: 2mm;">
-      <img @click="reproducir"  v-if="!player.playing" src="img/play.png" class="player_button" />&nbsp;
-      <img  @click="player.play()" v-if="player.paused && player.playing" src="img/play.png" class="player_button" />&nbsp;
-      <img  @click="player.pause()" v-if="!player.paused && player.playing" src="img/pause.png" class="player_button" />&nbsp;
-      <img  @click="player.stop()"  v-if="player.playing" src="img/stop.png" class="player_button" />&nbsp;
+      <img @click="reproducir"  v-if="!player.playing" src="/img/play.png" class="player_button" />&nbsp;
+      <img  @click="player.play()" v-if="player.paused && player.playing" src="/img/play.png" class="player_button" />&nbsp;
+      <img  @click="player.pause()" v-if="!player.paused && player.playing" src="/img/pause.png" class="player_button" />&nbsp;
+      <img  @click="player.stop()"  v-if="player.playing" src="/img/stop.png" class="player_button" />&nbsp;
       <span class="label">{{player.estadoRep}}</span>
     </div>
 
     <div id="settings" style="position:absolute; top:5mm; text-align: right; right: 10px; margin-left:auto; margin-right:0mm;">
       <a>
-        <img src="img/settings.png" @click="showSettings = !showSettings" style="width:75%"/>
+        <img src="/img/settings.png" @click="showSettings = !showSettings" style="width:75%"/>
       </a>
     </div>
 
@@ -80,9 +80,9 @@
       </table>
     </div>
 
-    <img name="zoomOut" @click="svg.zoomOut()" src="img/zoomout.svg" class="zoom-control" style="position:absolute;top:5mm;left: 5mm;" />
-    <img @click="svg.resetZoom();svg.resetPan();"  src="img/zoomreset.svg" class="zoom-control" style="position:absolute;top:15mm;left: 5mm;" />
-    <img @click="svg.zoomIn()" src="img/zoomin.svg" class="zoom-control" style="position:absolute;top:25mm;left: 5mm;" />
+    <img name="zoomOut" @click="svg.zoomOut()" src="/img/zoomout.svg" class="zoom-control" style="position:absolute;top:5mm;left: 5mm;" />
+    <img @click="svg.resetZoom();svg.resetPan();"  src="/img/zoomreset.svg" class="zoom-control" style="position:absolute;top:15mm;left: 5mm;" />
+    <img @click="svg.zoomIn()" src="/img/zoomin.svg" class="zoom-control" style="position:absolute;top:25mm;left: 5mm;" />
 
     
 
